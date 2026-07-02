@@ -16,7 +16,7 @@ relate.
   as raw, source-copied passthrough that Readers MUST preserve verbatim; only the illustrative
   field names in the example were genericised.
 
-## [1.14.0] - 2026-07-01
+## [1.14.0] - 2026-07-02
 
 Additive (MINOR) release: optional **recording-identity keys**, so a pack can carry a stable,
 open, exact identity for the recording it transcribes.
@@ -27,7 +27,9 @@ open, exact identity for the recording it transcribes.
   UUID) — and [`isrc`](spec/feedpak-v1.md#51-top-level-keys) — its International Standard
   Recording Code. Both are author-set exact identity keys: a consumer SHOULD prefer them over
   free-text `artist`/`title` matching when grouping charts of the same recording or looking up
-  external metadata, and SHOULD trust `mbid` when the two disagree.
+  external metadata, and SHOULD trust `mbid` when the two disagree. The stored ISRC is the bare
+  12-character code — the hyphens in the common display form are presentation only, stripped
+  when writing and before comparing.
   `schemas/manifest.schema.json` validates both formats.
 
 ### Compatibility
