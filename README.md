@@ -14,7 +14,7 @@ with them. One `.feedpak` holds all the authored data for a single song.
 
 | | |
 |---|---|
-| **Specification version** | 1.13.0 |
+| **Specification version** | 1.14.0 |
 | **Format major version** | 1 |
 | **Status** | Draft |
 | **Canonical extension** | `.feedpak` |
@@ -97,7 +97,7 @@ This repository is dual-licensed so the format stays maximally open:
 
 Attribution is **not required**, but if you build on feedpak a link back to this
 repository is appreciated. Suggested citation: *"feedpak format specification, version
-1.13.0, https://github.com/got-feedback/feedpak-spec"*.
+1.14.0, https://github.com/got-feedback/feedpak-spec"*.
 
 ## Contributing
 

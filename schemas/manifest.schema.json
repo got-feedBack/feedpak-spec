@@ -20,6 +20,16 @@
     "track": { "type": "integer", "minimum": 1 },
     "disc": { "type": "integer", "minimum": 1 },
     "genres": { "type": "array", "items": { "type": "string" } },
+    "mbid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "MusicBrainz Recording MBID of the recording this pack transcribes (lowercase canonical UUID). See spec §5.1."
+    },
+    "isrc": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}[A-Z0-9]{3}[0-9]{7}$",
+      "description": "International Standard Recording Code of the recording (12 characters). See spec §5.1."
+    },
     "language": { "$ref": "#/$defs/bcp47" },
     "authors": {
       "type": "array",

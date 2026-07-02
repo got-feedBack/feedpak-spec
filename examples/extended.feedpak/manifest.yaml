@@ -1,7 +1,7 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
 # song timeline, and a drum tab. See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.13.0"
+feedpak_version: "1.14.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -12,6 +12,8 @@ disc: 1
 genres:                           # most specific first; genres[0] is the primary genre (§5.1)
   - "Progressive Metal"
   - "Metal"
+mbid: "0aa1a833-c4d6-4c99-8e5c-2d0e8b8a9f31"   # MusicBrainz Recording MBID — exact identity (§5.1; illustrative value)
+isrc: "USABC2400001"                           # International Standard Recording Code (§5.1; illustrative value)
 language: en           # BCP 47 — the song's primary sung language (§5.1)
 authors:
   - name: Jane Smith

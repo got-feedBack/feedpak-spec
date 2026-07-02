@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.13.0
+- **Specification version:** 1.14.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-07-01
+- **Date:** 2026-07-02
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.13.0"
+feedpak_version: "1.14.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.13.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.14.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -179,7 +179,9 @@ feedpak_version: "1.13.0"
   all additive, an older Reader ignores them and still loads the single [`lyrics`](#71-lyricsjson)
   pointer as before. 1.12.0 adds the optional album-grouping / genre keys —
   [`album_artist`](#51-top-level-keys), [`track`](#51-top-level-keys), [`disc`](#51-top-level-keys),
-  and [`genres`](#51-top-level-keys) — all additive, an older Reader ignores them.)
+  and [`genres`](#51-top-level-keys) — all additive, an older Reader ignores them. 1.14.0 adds the
+  optional recording-identity keys — [`mbid`](#51-top-level-keys) and [`isrc`](#51-top-level-keys) —
+  additive, an older Reader ignores them.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -301,6 +303,8 @@ stems:
 | `track` | int | no | 1-based track number within the album, for album playback order. Absent ⇒ order is unspecified (a consumer MAY fall back to a filename/title heuristic or the user's own ordering). |
 | `disc` | int | no | 1-based disc number for a multi-disc release. Absent ⇒ `1`. |
 | `genres` | list | no | Zero or more genre labels (strings), most specific first; a consumer treats `genres[0]` as the primary genre. Free-form, but authors SHOULD prefer common, normalized names. Absent ⇒ unspecified. |
+| `mbid` | string (UUID) | no | [MusicBrainz](https://musicbrainz.org/) **Recording** MBID of the recording this pack transcribes, in lowercase canonical UUID form — an author-set, open, exact identity key. A consumer SHOULD prefer it over free-text `artist`/`title` matching when grouping charts of the same recording or looking up external metadata. Absent ⇒ identity is text-derived. |
+| `isrc` | string | no | [International Standard Recording Code](https://isrc.ifpi.org/) of the recording (12 characters, e.g. `USABC2400001`) — an alternate author-set exact identity key for when the MBID is unknown. The stored form is the bare 12-character code: the hyphens in the common display form (`US-ABC-24-00001`) are presentation only and not part of the code, so authors SHOULD strip separators when writing the key and consumers SHOULD strip them before comparing. When both are present and disagree, a consumer SHOULD trust `mbid`. Absent ⇒ unspecified. |
 | `language` | string | no | [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for the song's **primary sung language** (e.g. `en`, `ja`, `ko`, `zh-Hans`). Absent ⇒ unspecified (treat as `und`). See [§5.5](#55-lyric_tracks). |
 | `authors` | list | no | Human contributors who authored or edited this feedpak (see [§5.4](#54-authors)). Distinct from `artist`. |
 | `duration` | number | **yes** | Song length in seconds. |
