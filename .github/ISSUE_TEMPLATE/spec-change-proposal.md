@@ -11,6 +11,14 @@ shape here, reach rough consensus, then land it as a PR that updates the spec, t
 an example, and the CHANGELOG together.
 -->
 
+## Summary
+
+<!--
+Your elevator pitch: in a sentence or two, and in your own words, say what changes and why it
+matters — enough that a reader gets the gist before the detail below. Keep it tight; a wall of
+generated text buries the point instead of making it.
+-->
+
 ## Problem / motivation
 
 What can't be expressed today, or what is awkward? Who needs this?

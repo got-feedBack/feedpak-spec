@@ -5,6 +5,13 @@ title: "<short description>"
 labels: ["bug"]
 ---
 
+## Summary
+
+<!--
+One or two sentences, in plain language: what's wrong and why it matters. The details go in the
+sections below — this is just so a reader grasps the issue at a glance.
+-->
+
 ## Where
 
 - [ ] `spec/feedpak-v1.md` (section: ____)
