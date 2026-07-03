@@ -35,7 +35,7 @@ This appends a `Signed-off-by: Your Name <you@example.com>` trailer. If you forg
 Anything that changes what a conformant pack or reader must do goes through a lightweight
 proposal so the discussion and rationale are recorded.
 
-1. **Open an issue** using the *feedpak Enhancement Proposal* template. Describe the problem,
+1. **Open an issue** using the *feedpak Enhancement Proposal* [template](https://github.com/got-feedback/feedpak-spec/tree/main/.github/ISSUE_TEMPLATE). Describe the problem,
    the proposed change, the on-disk shape (manifest key and/or side-file), backward
    compatibility, and which version bump it implies (see below).
 2. **Discuss.** A proposal is refined in the issue until it has a clear shape and rough
