@@ -1,7 +1,7 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
 # song timeline, and a drum tab. See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.14.0"
+feedpak_version: "1.15.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -40,11 +40,30 @@ arrangements:
     type: piano
     notation: arrangements/notation_keys.json
 stems:
+  # A separated pack: the RESERVED `full` mixdown is RETAINED alongside the
+  # per-instrument stems it was split into (§5.3). It is not an instrument
+  # layer — a Reader must never sum it with the stems below (that would double
+  # the whole song), hence `default: false`. It is kept because separation is
+  # lossy: re-summing guitar+drums+vocals does not reproduce this file.
   - id: full
     file: stems/full.ogg
     codec: vorbis        # OPTIONAL disambiguation hint; inferred from .ogg when absent
     language: en         # BCP 47 — the sung language carried in this stem (§5.3)
+    default: false
+  - id: guitar
+    file: stems/guitar.ogg
     default: true
+  - id: drums
+    file: stems/drums.ogg
+    default: true
+  - id: vocals
+    file: stems/vocals.ogg
+    language: en
+    default: true
+stem_separation:         # provenance for the per-instrument stems above (§5.3.1)
+  engine: demucs
+  model: htdemucs_6s
+  version: "1.0.0"
 lyrics: lyrics.json      # legacy single pointer — the primary (en) track, for pre-1.11.0 readers
 lyrics_source: authored
 lyric_tracks:            # multi-lingual lyric representations (§5.5)
