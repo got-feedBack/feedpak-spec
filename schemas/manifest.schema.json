@@ -128,7 +128,11 @@
       "required": ["id", "file"],
       "additionalProperties": true,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable stem identifier. The id 'full' is RESERVED for the song's complete mixdown (spec 5.3): a Reader MUST NOT sum it with per-instrument stems, and a Writer that separates a pack SHOULD retain it alongside them with default:false."
+        },
         "file": { "$ref": "#/$defs/relpath" },
         "codec": { "type": "string", "minLength": 1 },
         "language": { "$ref": "#/$defs/bcp47" },

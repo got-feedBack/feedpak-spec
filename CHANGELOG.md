@@ -16,6 +16,42 @@ relate.
   as raw, source-copied passthrough that Readers MUST preserve verbatim; only the illustrative
   field names in the example were genericised.
 
+## [1.15.0] - 2026-07-13
+
+Additive (MINOR) release: the stem id **`full`** is now reserved for the complete mixdown, and a
+separated pack is asked to **keep** it rather than throw it away.
+
+The format always had a home for the pre-separation mixdown — a stem — but §5.3 described `full`
+as being "commonly replaced" by the per-instrument entries once a pack is split, which left the
+mixdown nowhere to live. Source separation is lossy, so that lost audio is unrecoverable: summing
+`guitar + bass + drums + vocals` does not reproduce the file they came from. In practice
+implementations worked around this by inventing a *second* location for audio outside `stems`
+(a top-level key pointing at an `original/` directory), which is exactly the redundancy an open
+format should not have. Reserving `full` closes the gap with no new manifest surface at all.
+
+### Added
+- [§5.3](spec/feedpak-v1.md#the-full-stem--the-complete-mixdown) — the stem id `full` is
+  **RESERVED** for the song's complete mixdown, and a Writer **MUST NOT** use it for anything
+  else. A Writer that separates a pack into per-instrument stems **SHOULD** retain the `full`
+  entry alongside them with `default: false`.
+- Normative Reader rules for a pack that carries `full` *and* per-instrument stems: a Reader that
+  sums stems **MUST NOT** include `full` in the sum (it already contains every instrument —
+  summing it doubles the whole song), a per-stem mixer **SHOULD NOT** offer `full` as an
+  instrument channel, and a Reader **SHOULD** prefer `full` over the summed stems when every
+  instrument stem is at unity gain, since it is the same mix without the separation loss.
+- `schemas/manifest.schema.json` documents the reserved id on `stemEntry.id`.
+- `examples/extended.feedpak` is now a separated pack that retains `full` alongside `guitar`,
+  `drums` and `vocals` (plus a `stem_separation` provenance block), exercising the new rule.
+
+### Compatibility
+- No manifest key is added, removed, renamed, or repurposed; a pack that predates this release
+  stays valid, and `stems` semantics are unchanged for every id other than `full`.
+- Safe for an older Reader **that honours `default`** — normative since 1.0.0 — which is exactly
+  why the retained entry is specified as `default: false`: such a Reader does not play `full` on
+  open, whatever else it does with the list. A Reader that sums every stem regardless of `default`
+  was already mis-reading the format; the `default: false` requirement on `full` is what keeps
+  even that Reader from doubling the mix on open.
+
 ## [1.14.0] - 2026-07-02
 
 Additive (MINOR) release: optional **recording-identity keys**, so a pack can carry a stable,

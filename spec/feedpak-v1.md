@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.14.0
+- **Specification version:** 1.15.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-07-02
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.14.0"
+feedpak_version: "1.15.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.14.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.15.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -181,7 +181,11 @@ feedpak_version: "1.14.0"
   [`album_artist`](#51-top-level-keys), [`track`](#51-top-level-keys), [`disc`](#51-top-level-keys),
   and [`genres`](#51-top-level-keys) — all additive, an older Reader ignores them. 1.14.0 adds the
   optional recording-identity keys — [`mbid`](#51-top-level-keys) and [`isrc`](#51-top-level-keys) —
-  additive, an older Reader ignores them.)
+  additive, an older Reader ignores them. 1.15.0 adds no manifest key at all: it reserves the
+  stem id [`full`](#the-full-stem--the-complete-mixdown) for the complete mixdown and asks Writers
+  to retain that entry, `default: false`, after separating a pack into per-instrument stems. It is
+  safe for an older Reader that honours [`default`](#53-stems) — normative since 1.0.0 — which is
+  precisely why the retained entry is specified as `default: false`.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -361,17 +365,20 @@ the arrangement JSON; the in-JSON values are fallbacks.
 
 ```yaml
 stems:
-  - id: full
+  - id: full             # RESERVED — the complete mixdown (see below)
     file: stems/full.ogg
+    default: false       # retained after separation, but never summed with the stems below
+  - id: guitar
+    file: stems/guitar.ogg
     default: true        # plays by default when the song opens
   - id: drums
     file: stems/drums.ogg
-    default: false
+    default: true
 ```
 
 | Field | Type | Default | Notes |
 |---|---|---|---|
-| `id` | string | — | **REQUIRED.** Stable identifier referenced by consumers. |
+| `id` | string | — | **REQUIRED.** Stable identifier referenced by consumers. The id `full` is **RESERVED** for the complete mixdown — see [the `full` stem](#the-full-stem--the-complete-mixdown) below. |
 | `file` | string (path) | — | **REQUIRED.** Path to the audio file. |
 | `codec` | string | — | OPTIONAL codec hint (e.g. `"vorbis"`, `"opus"`, `"pcm"`, `"mp3"`, `"flac"`). When absent, the codec is inferred from the file extension; when present it **overrides** the extension (see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)). Its main use is disambiguating an extension that doesn't pin the codec (container ≠ codec), but it MAY be set redundantly to be explicit. |
 | `language` | string | — | OPTIONAL [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for a language-specific vocal stem (e.g. a `vocals_ja` stem with `language: ja` and a `vocals_en` stem with `language: en` for a song with two sung-language recordings). Absent ⇒ untagged — an instrumental stem or a stem whose language is unspecified. A [`lyric_tracks`](#55-lyric_tracks) entry's `stem` pointer pairs lyrics with the stem they were sung on. |
@@ -381,10 +388,40 @@ stems:
 case-insensitive strings `"true"`/`"false"`, `"on"`/`"off"`, and `"yes"`/`"no"`, mapping them to
 the obvious boolean. Writers **SHOULD** emit a real boolean or `"on"`/`"off"`.
 
-`stems` **MUST** be non-empty. There is no required `id` or filename: a freshly converted pack
-typically has a single `{id: full, file: stems/full.ogg}` entry; after stem splitting, `full`
-is commonly replaced by per-instrument entries (`guitar`, `bass`, `drums`, `vocals`, `other`,
-`piano`, …). No entry is guaranteed to be present beyond the non-empty requirement.
+`stems` **MUST** be non-empty. Beyond that, no entry is guaranteed to be present and no filename
+is required — a Reader **MUST** resolve every stem through the manifest rather than by scanning
+for conventional names ([§2.2](#22-three-core-rules)). Exactly one `id` carries normative
+meaning, and it is the subject of the next section.
+
+#### The `full` stem — the complete mixdown
+
+The stem id `full` is **RESERVED**. A stem with `id: full` **MUST** be the song's complete
+mixdown — the entire song in one file, as heard before any source separation. A Writer **MUST
+NOT** use the id `full` for anything else (a "full drum kit" stem is `drums`, not `full`).
+
+A freshly converted pack typically carries `full` as its only stem. When a Writer separates that
+mixdown into per-instrument stems (`guitar`, `bass`, `drums`, `vocals`, `other`, `piano`, …), it
+**SHOULD** retain the `full` entry alongside them, with `default: false`. Source separation is
+lossy: summing the per-instrument stems does **not** reproduce the mixdown. The `full` stem is
+therefore the only way a Reader can play the song exactly as it was recorded, and a pack that
+discards it has thrown away audio it cannot rebuild. Retaining it costs one more file and no new
+manifest surface.
+
+**`full` is a mixdown, not a layer.** When a pack carries `full` *and* per-instrument stems:
+
+- A Reader that sums stems into one mix **MUST NOT** include `full` in that sum. It already
+  contains every instrument; summing it doubles the entire song, and muting `guitar` still
+  leaves the guitar audible inside it.
+- A Reader that presents a per-stem mixer **SHOULD NOT** offer `full` as an instrument channel.
+- A Reader **SHOULD** prefer `full` over the summed per-instrument stems whenever every
+  instrument stem is audible at unity gain — it is the same mix, without the separation loss.
+
+This is safe for a Reader written before this rule existed, because the retained entry carries
+`default: false` and honouring `default` has been normative since 1.0.0: a Reader that respects
+`default` does not play `full` on open, whatever else it does with the list. A Reader that sums
+every stem regardless of `default` was already mis-reading the format, and such a Reader is the
+reason a Writer **MUST NOT** mark `full` `default: true` in a pack that also ships per-instrument
+stems.
 
 #### 5.3.1. `stem_separation`
 
