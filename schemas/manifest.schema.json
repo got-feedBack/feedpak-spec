@@ -291,7 +291,7 @@
             "authored",
             "user"
           ],
-          "description": "How this stem was produced. 'separated' = machine source-separation; 'authored' = a real recorded/delivered stem; 'user' = hand-edited. Absent => inherit: 'separated' when the pack declares stem_separation, else unknown. Same shape as the lyrics_source vocabulary (spec 7.1). NEVER applies to the RESERVED `full` stem: that is the mixdown separation was run on, so it cannot be a separation output and does not inherit the pack-level stem_separation."
+          "description": "How this stem was produced. 'separated' = machine source-separation; 'authored' = a real recorded/delivered stem; 'user' = hand-edited. Absent => inherit: 'separated' when the pack declares stem_separation, else unknown. 'separated' states the KIND and does not require a known engine: the engine is this stem's `separation`, else the pack-level stem_separation, else unknown - a pack MAY honestly say a stem came out of a separator without knowing which. NEVER applies to the RESERVED `full` stem: that is the mixdown separation was run on, so it cannot be a separation output and does not inherit the pack-level stem_separation."
         },
         "separation": {
           "$ref": "#/$defs/provenance",

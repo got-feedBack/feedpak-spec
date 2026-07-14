@@ -28,6 +28,11 @@ relate.
   engine produced the original recording. A Writer MUST NOT give `full` `source: separated` or a
   `separation` object; the schema rejects both.
 
+  `source` states the **kind** and does not require a known engine: a pack MAY honestly say a
+  stem came out of a separator without knowing which one (a conversion from another format,
+  a producer who never recorded the model). A Reader MUST NOT treat that as invalid, and MUST
+  NOT invent provenance the pack does not carry.
+
   `source` and `separation` are independent: `separation` alone implies `separated`;
   `source: separated` alone inherits the pack-level engine. A stem whose `source` is `user`
   or `authored` **MUST NOT** carry a `separation` object — it would claim an engine made

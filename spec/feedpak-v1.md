@@ -383,7 +383,7 @@ stems:
 | `codec` | string | — | OPTIONAL codec hint (e.g. `"vorbis"`, `"opus"`, `"pcm"`, `"mp3"`, `"flac"`). When absent, the codec is inferred from the file extension; when present it **overrides** the extension (see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)). Its main use is disambiguating an extension that doesn't pin the codec (container ≠ codec), but it MAY be set redundantly to be explicit. |
 | `language` | string | — | OPTIONAL [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for a language-specific vocal stem (e.g. a `vocals_ja` stem with `language: ja` and a `vocals_en` stem with `language: en` for a song with two sung-language recordings). Absent ⇒ untagged — an instrumental stem or a stem whose language is unspecified. A [`lyric_tracks`](#55-lyric_tracks) entry's `stem` pointer pairs lyrics with the stem they were sung on. |
 | `default` | boolean | `false` | Whether this stem is enabled when the song opens. |
-| `source` | string | — | OPTIONAL origin of this stem: `separated` (machine source-separation), `authored` (a real recorded or delivered stem), or `user` (hand-edited). Absent ⇒ **inherit**: `separated` when the pack declares [`stem_separation`](#531-stem_separation), else unknown. See [§5.3.1](#531-stem_separation). |
+| `source` | string | — | OPTIONAL origin of this stem: `separated` (machine source-separation), `authored` (a real recorded or delivered stem), or `user` (hand-edited). Absent ⇒ **inherit**: `separated` when the pack declares [`stem_separation`](#531-stem_separation), else unknown. `separated` states the **kind**, and does not require a known engine — the engine is this stem's `separation`, else the pack-level `stem_separation`, else unknown. Never applies to the RESERVED `full` stem ([§5.3.1](#531-stem_separation)). |
 | `separation` | object | — | OPTIONAL `{engine, model, version}` provenance for **this** stem — same shape and semver semantics as [`stem_separation`](#531-stem_separation), which it overrides. Meaningful when `source` is `separated`. |
 | `edit` | object | — | OPTIONAL `{tool, version}` — what produced or last modified a stem a **person** made (`source: user` or `authored`). The human counterpart of `separation`. `tool` is **REQUIRED** when `edit` is present (an `edit` that doesn't say what edited it records nothing); `version` is OPTIONAL. |
 | `derived_from` | string | — | OPTIONAL stem `id` this stem started from — e.g. a hand-edited `bass` that began as the separated `bass`. Records lineage so a tool can warn before discarding work built on an older split. |
@@ -501,8 +501,12 @@ this:
 1. **`separation` present** ⇒ the stem is `separated`, by that engine/model. (It implies
    `source: separated`; a Writer MAY state `source` redundantly, and a Reader **MUST NOT** treat
    the absence of `source` here as "unknown".)
-2. **`source: separated`, no `separation`** ⇒ separated by the pack-level
-   [`stem_separation`](#531-stem_separation) — the stem is simply naming what it inherits.
+2. **`source: separated`, no `separation`** ⇒ the stem is machine-separated; the engine is the
+   pack-level [`stem_separation`](#531-stem_separation) if the pack declares one, and **unknown**
+   if it does not. *Known kind, unknown engine* is a legitimate state — a pack can honestly say
+   "this came out of a separator" without knowing which one (a pack converted from another format,
+   or a stem whose producer never recorded the model). A Reader **MUST NOT** treat it as invalid,
+   and **MUST NOT** invent provenance the pack does not carry.
 3. **`source: user` or `authored`** ⇒ **not** machine-separated. The pack-level `stem_separation`
    does **not** describe this stem, whatever it says. Any `edit` object records what did produce it.
 4. **Nothing declared** ⇒ inherit the pack-level `stem_separation` (⇒ `separated`, by that
@@ -520,7 +524,7 @@ that positively with `source: authored`.
 |---|---|
 | *(nothing)* | inherits `stem_separation`; unknown if the pack has none |
 | `separation: {…}` | `separated`, by **that** engine/model |
-| `source: separated` | `separated`, by the pack-level `stem_separation` |
+| `source: separated` | `separated`; engine = the pack-level `stem_separation`, or **unknown** if the pack declares none |
 | `source: separated` + `separation: {…}` | `separated`, by **that** engine/model (the `source` is redundant, not wrong) |
 | `source: user` / `authored` (+ optional `edit`) | **not** separated; `stem_separation` does not apply |
 | *(anything)*, on `id: full` | **never** separated — `full` is the audio that was separated, not a product of it |
