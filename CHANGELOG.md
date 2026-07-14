@@ -10,6 +10,42 @@ relate.
 
 ## [Unreleased]
 
+### Added
+- **Per-stem origin** (§5.3, §5.3.1) — a pack whose stems came from *different* sources can now
+  describe itself. Four OPTIONAL keys on a `stems` entry:
+  - `source` — `separated` | `authored` | `user`. Absent ⇒ inherit (`separated` by the pack's
+    `stem_separation`, if it declares one). Same vocabulary shape as `lyrics_source` (§7.1).
+  - `separation` — `{engine, model, version}` for **this** stem, overriding the pack-level
+    `stem_separation`. Same triple, same semver semantics.
+  - `edit` — `{tool, version}`: what produced or last modified a stem a **person** made. The
+    human counterpart of `separation`, so a hand-made stem records what made it instead of being
+    identified by the absence of engine metadata.
+  - `derived_from` — the stem id an edited stem began life as, so a tool can warn before
+    replacing the audio someone's edit was built on.
+
+  The RESERVED `full` stem **never inherits**: it is the mixdown separation was run *on*, not a
+  product of it, so applying the pack-level `stem_separation` to it would have the pack claim an
+  engine produced the original recording. A Writer MUST NOT give `full` `source: separated` or a
+  `separation` object; the schema rejects both.
+
+  `source` states the **kind** and does not require a known engine: a pack MAY honestly say a
+  stem came out of a separator without knowing which one (a conversion from another format,
+  a producer who never recorded the model). A Reader MUST NOT treat that as invalid, and MUST
+  NOT invent provenance the pack does not carry.
+
+  `source` and `separation` are independent: `separation` alone implies `separated`;
+  `source: separated` alone inherits the pack-level engine. A stem whose `source` is `user`
+  or `authored` **MUST NOT** carry a `separation` object — it would claim an engine made
+  audio a person made. The schema enforces this.
+
+  `stem_separation` was one engine + model for the **whole** pack, so re-splitting a single stem
+  with a better model, or hand-editing one stem among machine-separated ones, forced a writer to
+  choose between *lying in the manifest* (stamping an engine over stems it never produced) and
+  *destroying provenance* (dropping the key, discarding the truth about every stem nobody
+  touched). Neither was acceptable. A pack produced by a single whole-pack split does not change
+  shape at all: `stem_separation` keeps its meaning, and remains the default for stems that don't
+  override it.
+
 ### Changed
 - Docs (no format change): the §6.9 `tones.definitions` example now uses a neutral opaque
   placeholder instead of a source-specific field name. `definitions` is unchanged — still defined

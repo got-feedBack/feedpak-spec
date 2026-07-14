@@ -50,17 +50,31 @@ stems:
     codec: vorbis        # OPTIONAL disambiguation hint; inferred from .ogg when absent
     language: en         # BCP 47 — the sung language carried in this stem (§5.3)
     default: false
-  - id: guitar
+    source: authored     # the mixdown separation was run ON — never a separation OUTPUT (§5.3.1),
+                         # so it does NOT inherit the stem_separation below
+  # This pack's stems do NOT all share one origin. A stem that says nothing INHERITS the
+  # pack-level stem_separation below; the ones that differ from it say so (§5.3.1).
+  - id: guitar           # says nothing -> inherits stem_separation below
     file: stems/guitar.ogg
     default: true
-  - id: drums
+  - id: drums            # cleaned up by hand, starting from the separated drums
     file: stems/drums.ogg
     default: true
-  - id: vocals
+    source: user
+    edit:
+      tool: feedBack-editor
+      version: "0.9.2"
+    derived_from: drums  # lineage: a tool can warn before re-splitting over this work
+  - id: vocals           # re-split later with a better model than the pack default
     file: stems/vocals.ogg
     language: en
     default: true
-stem_separation:         # provenance for the per-instrument stems above (§5.3.1)
+    source: separated
+    separation:
+      engine: bs-roformer
+      model: bs_roformer_sw
+      version: "1.0.0"
+stem_separation:         # the pack-level DEFAULT: what produced the stems that don't say (§5.3.1)
   engine: demucs
   model: htdemucs_6s
   version: "1.0.0"
