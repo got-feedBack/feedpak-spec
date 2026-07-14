@@ -23,6 +23,11 @@ relate.
   - `derived_from` — the stem id an edited stem began life as, so a tool can warn before
     replacing the audio someone's edit was built on.
 
+  The RESERVED `full` stem **never inherits**: it is the mixdown separation was run *on*, not a
+  product of it, so applying the pack-level `stem_separation` to it would have the pack claim an
+  engine produced the original recording. A Writer MUST NOT give `full` `source: separated` or a
+  `separation` object; the schema rejects both.
+
   `source` and `separation` are independent: `separation` alone implies `separated`;
   `source: separated` alone inherits the pack-level engine. A stem whose `source` is `user`
   or `authored` **MUST NOT** carry a `separation` object — it would claim an engine made

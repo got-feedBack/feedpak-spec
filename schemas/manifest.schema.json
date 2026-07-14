@@ -291,7 +291,7 @@
             "authored",
             "user"
           ],
-          "description": "How this stem was produced. 'separated' = machine source-separation; 'authored' = a real recorded/delivered stem; 'user' = hand-edited. Absent => inherit: 'separated' when the pack declares stem_separation, else unknown. Same shape as the lyrics_source vocabulary (spec 7.1)."
+          "description": "How this stem was produced. 'separated' = machine source-separation; 'authored' = a real recorded/delivered stem; 'user' = hand-edited. Absent => inherit: 'separated' when the pack declares stem_separation, else unknown. Same shape as the lyrics_source vocabulary (spec 7.1). NEVER applies to the RESERVED `full` stem: that is the mixdown separation was run on, so it cannot be a separation output and does not inherit the pack-level stem_separation."
         },
         "separation": {
           "$ref": "#/$defs/provenance",
@@ -306,27 +306,65 @@
           "description": "OPTIONAL lineage: the stem id this one started from — e.g. a hand-edited 'bass' that began as the separated 'bass'. Lets a tool warn that re-splitting would discard work built on an older split, instead of silently overwriting it."
         }
       },
-      "not": {
-        "description": "A stem whose source is 'user' or 'authored' was made by a person; it MUST NOT also carry an engine `separation` object claiming otherwise about the same audio (spec 5.3.1). Use `derived_from` to record that an edited stem began as a separated one.",
-        "allOf": [
-          {
-            "properties": {
-              "source": {
-                "enum": [
-                  "user",
-                  "authored"
+      "allOf": [
+        {
+          "not": {
+            "description": "A stem whose source is 'user' or 'authored' was made by a person; it MUST NOT also carry an engine `separation` object claiming otherwise about the same audio (spec 5.3.1). Use `derived_from` to record that an edited stem began as a separated one.",
+            "allOf": [
+              {
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "user",
+                      "authored"
+                    ]
+                  }
+                }
+              },
+              {
+                "required": [
+                  "source",
+                  "separation"
                 ]
               }
-            }
-          },
-          {
-            "required": [
-              "source",
-              "separation"
             ]
           }
-        ]
-      }
+        },
+        {
+          "description": "The RESERVED `full` stem is the complete mixdown - the audio separation was run ON, not a product of it (spec 5.3.1). It MUST NOT claim to be a separation output, and a Reader MUST NOT apply the pack-level stem_separation to it.",
+          "if": {
+            "properties": {
+              "id": {
+                "const": "full"
+              }
+            },
+            "required": [
+              "id"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "separation"
+                  ]
+                },
+                {
+                  "properties": {
+                    "source": {
+                      "const": "separated"
+                    }
+                  },
+                  "required": [
+                    "source"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
     },
     "provenance": {
       "type": "object",

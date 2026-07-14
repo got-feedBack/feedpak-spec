@@ -508,6 +508,14 @@ this:
 4. **Nothing declared** ⇒ inherit the pack-level `stem_separation` (⇒ `separated`, by that
    engine/model); if the pack declares none, the origin is unknown.
 
+**The `full` stem never inherits.** `full` is the RESERVED complete mixdown — the audio separation
+was run *on*, not a product of it (see [the `full` stem](#the-full-stem--the-complete-mixdown)).
+Letting it inherit `stem_separation` would have the pack claim an engine produced the original
+recording, which is false for every pack that has ever been split. A Reader **MUST NOT** apply the
+pack-level `stem_separation` to `id: full`, and a Writer **MUST NOT** give it `source: separated`
+or a `separation` object. Its origin is whatever the song's audio always was; a Writer MAY state
+that positively with `source: authored`.
+
 | Stem declares | Resolves to |
 |---|---|
 | *(nothing)* | inherits `stem_separation`; unknown if the pack has none |
@@ -515,6 +523,7 @@ this:
 | `source: separated` | `separated`, by the pack-level `stem_separation` |
 | `source: separated` + `separation: {…}` | `separated`, by **that** engine/model (the `source` is redundant, not wrong) |
 | `source: user` / `authored` (+ optional `edit`) | **not** separated; `stem_separation` does not apply |
+| *(anything)*, on `id: full` | **never** separated — `full` is the audio that was separated, not a product of it |
 
 A Writer **MUST NOT** set `separation` on a stem whose `source` is `user` or `authored`: those
 say "a person made this", and an engine triple would then claim otherwise about the same audio. To

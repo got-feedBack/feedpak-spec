@@ -50,6 +50,8 @@ stems:
     codec: vorbis        # OPTIONAL disambiguation hint; inferred from .ogg when absent
     language: en         # BCP 47 — the sung language carried in this stem (§5.3)
     default: false
+    source: authored     # the mixdown separation was run ON — never a separation OUTPUT (§5.3.1),
+                         # so it does NOT inherit the stem_separation below
   # This pack's stems do NOT all share one origin. A stem that says nothing INHERITS the
   # pack-level stem_separation below; the ones that differ from it say so (§5.3.1).
   - id: guitar           # says nothing -> inherits stem_separation below
