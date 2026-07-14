@@ -23,6 +23,11 @@ relate.
   - `derived_from` — the stem id an edited stem began life as, so a tool can warn before
     replacing the audio someone's edit was built on.
 
+  `source` and `separation` are independent: `separation` alone implies `separated`;
+  `source: separated` alone inherits the pack-level engine. A stem whose `source` is `user`
+  or `authored` **MUST NOT** carry a `separation` object — it would claim an engine made
+  audio a person made. The schema enforces this.
+
   `stem_separation` was one engine + model for the **whole** pack, so re-splitting a single stem
   with a better model, or hand-editing one stem among machine-separated ones, forced a writer to
   choose between *lying in the manifest* (stamping an engine over stems it never produced) and

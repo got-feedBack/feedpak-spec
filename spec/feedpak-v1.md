@@ -385,7 +385,7 @@ stems:
 | `default` | boolean | `false` | Whether this stem is enabled when the song opens. |
 | `source` | string | — | OPTIONAL origin of this stem: `separated` (machine source-separation), `authored` (a real recorded or delivered stem), or `user` (hand-edited). Absent ⇒ **inherit**: `separated` when the pack declares [`stem_separation`](#531-stem_separation), else unknown. See [§5.3.1](#531-stem_separation). |
 | `separation` | object | — | OPTIONAL `{engine, model, version}` provenance for **this** stem — same shape and semver semantics as [`stem_separation`](#531-stem_separation), which it overrides. Meaningful when `source` is `separated`. |
-| `edit` | object | — | OPTIONAL `{tool, version}` — what produced or last modified a stem a **person** made (`source: user` or `authored`). The human counterpart of `separation`. |
+| `edit` | object | — | OPTIONAL `{tool, version}` — what produced or last modified a stem a **person** made (`source: user` or `authored`). The human counterpart of `separation`. `tool` is **REQUIRED** when `edit` is present (an `edit` that doesn't say what edited it records nothing); `version` is OPTIONAL. |
 | `derived_from` | string | — | OPTIONAL stem `id` this stem started from — e.g. a hand-edited `bass` that began as the separated `bass`. Records lineage so a tool can warn before discarding work built on an older split. |
 
 `default` is logically boolean. For hand-edited convenience, Readers **MUST** also accept the
@@ -494,11 +494,33 @@ stems:
     source: authored
 ```
 
-A Reader resolves "what produced this stem?" in this order:
+**Resolution.** `source` answers *what kind of thing produced this stem*; `separation` answers
+*which engine*. They are independent, and either may be omitted, so a Reader resolves a stem like
+this:
 
-1. the stem's own `source` (with `separation` / `edit`), **if present**;
-2. else the pack-level `stem_separation` ⇒ `separated`, by that engine and model;
-3. else unknown.
+1. **`separation` present** ⇒ the stem is `separated`, by that engine/model. (It implies
+   `source: separated`; a Writer MAY state `source` redundantly, and a Reader **MUST NOT** treat
+   the absence of `source` here as "unknown".)
+2. **`source: separated`, no `separation`** ⇒ separated by the pack-level
+   [`stem_separation`](#531-stem_separation) — the stem is simply naming what it inherits.
+3. **`source: user` or `authored`** ⇒ **not** machine-separated. The pack-level `stem_separation`
+   does **not** describe this stem, whatever it says. Any `edit` object records what did produce it.
+4. **Nothing declared** ⇒ inherit the pack-level `stem_separation` (⇒ `separated`, by that
+   engine/model); if the pack declares none, the origin is unknown.
+
+| Stem declares | Resolves to |
+|---|---|
+| *(nothing)* | inherits `stem_separation`; unknown if the pack has none |
+| `separation: {…}` | `separated`, by **that** engine/model |
+| `source: separated` | `separated`, by the pack-level `stem_separation` |
+| `source: separated` + `separation: {…}` | `separated`, by **that** engine/model (the `source` is redundant, not wrong) |
+| `source: user` / `authored` (+ optional `edit`) | **not** separated; `stem_separation` does not apply |
+
+A Writer **MUST NOT** set `separation` on a stem whose `source` is `user` or `authored`: those
+say "a person made this", and an engine triple would then claim otherwise about the same audio. To
+record that an edited stem *began* as a separated one, use
+[`derived_from`](#531-stem_separation) — the lineage belongs on the edit, not a contradictory
+provenance object.
 
 A Writer **MUST NOT** stamp a pack-level `stem_separation` that is false for stems it did not
 produce: a partial re-split **MUST** record the new engine on the stem(s) it replaced (via that

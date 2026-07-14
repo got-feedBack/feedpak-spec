@@ -285,6 +285,7 @@
           ]
         },
         "source": {
+          "type": "string",
           "enum": [
             "separated",
             "authored",
@@ -304,6 +305,27 @@
           "minLength": 1,
           "description": "OPTIONAL lineage: the stem id this one started from — e.g. a hand-edited 'bass' that began as the separated 'bass'. Lets a tool warn that re-splitting would discard work built on an older split, instead of silently overwriting it."
         }
+      },
+      "not": {
+        "description": "A stem whose source is 'user' or 'authored' was made by a person; it MUST NOT also carry an engine `separation` object claiming otherwise about the same audio (spec 5.3.1). Use `derived_from` to record that an edited stem began as a separated one.",
+        "allOf": [
+          {
+            "properties": {
+              "source": {
+                "enum": [
+                  "user",
+                  "authored"
+                ]
+              }
+            }
+          },
+          {
+            "required": [
+              "source",
+              "separation"
+            ]
+          }
+        ]
       }
     },
     "provenance": {
