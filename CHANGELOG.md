@@ -10,6 +10,27 @@ relate.
 
 ## [Unreleased]
 
+### Added
+- **Per-stem origin** (§5.3, §5.3.1) — a pack whose stems came from *different* sources can now
+  describe itself. Four OPTIONAL keys on a `stems` entry:
+  - `source` — `separated` | `authored` | `user`. Absent ⇒ inherit (`separated` by the pack's
+    `stem_separation`, if it declares one). Same vocabulary shape as `lyrics_source` (§7.1).
+  - `separation` — `{engine, model, version}` for **this** stem, overriding the pack-level
+    `stem_separation`. Same triple, same semver semantics.
+  - `edit` — `{tool, version}`: what produced or last modified a stem a **person** made. The
+    human counterpart of `separation`, so a hand-made stem records what made it instead of being
+    identified by the absence of engine metadata.
+  - `derived_from` — the stem id an edited stem began life as, so a tool can warn before
+    replacing the audio someone's edit was built on.
+
+  `stem_separation` was one engine + model for the **whole** pack, so re-splitting a single stem
+  with a better model, or hand-editing one stem among machine-separated ones, forced a writer to
+  choose between *lying in the manifest* (stamping an engine over stems it never produced) and
+  *destroying provenance* (dropping the key, discarding the truth about every stem nobody
+  touched). Neither was acceptable. A pack produced by a single whole-pack split does not change
+  shape at all: `stem_separation` keeps its meaning, and remains the default for stems that don't
+  override it.
+
 ### Changed
 - Docs (no format change): the §6.9 `tones.definitions` example now uses a neutral opaque
   placeholder instead of a source-specific field name. `definitions` is unchanged — still defined
