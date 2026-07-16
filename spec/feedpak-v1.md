@@ -401,11 +401,23 @@ NOT** use the id `full` for anything else (a "full drum kit" stem is `drums`, no
 
 A freshly converted pack typically carries `full` as its only stem. When a Writer separates that
 mixdown into per-instrument stems (`guitar`, `bass`, `drums`, `vocals`, `other`, `piano`, …), it
-**SHOULD** retain the `full` entry alongside them, with `default: false`. Source separation is
+**MUST** — for packs declaring `feedpak_version` 1.16.0 or newer; **SHOULD** for packs declaring
+an earlier version — retain the `full` entry alongside them, with `default: false`. Source separation is
 lossy: summing the per-instrument stems does **not** reproduce the mixdown. The `full` stem is
 therefore the only way a Reader can play the song exactly as it was recorded, and a pack that
 discards it has thrown away audio it cannot rebuild. Retaining it costs one more file and no new
-manifest surface.
+manifest surface, and consumers rely on it — a Reader that plays `full` at unity gain to avoid
+the separation loss (below) silently degrades to the lossy recombination on any pack that dropped
+it.
+
+The obligation is scoped to the pack's own version, as stated in the rule itself: the MUST binds
+a Writer producing a pack at `feedpak_version` **1.16.0 or newer**. Before 1.16.0 the rule was a
+`SHOULD`, so a pack authored
+under an earlier version that separated without retaining `full` remains conformant to the version
+it declares — nothing is retroactively invalidated. (This is not a requirement to *manufacture* a
+mixdown: it binds only the act of *separating* one, where the mixdown provably existed a moment
+earlier. A pack of real recorded multitrack stems, never separated from a single mix, is not
+covered.)
 
 **`full` is a mixdown, not a layer.** When a pack carries `full` *and* per-instrument stems:
 

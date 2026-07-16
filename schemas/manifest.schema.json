@@ -131,7 +131,7 @@
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Stable stem identifier. The id 'full' is RESERVED for the song's complete mixdown (spec 5.3): a Reader MUST NOT sum it with per-instrument stems, and a Writer that separates a pack SHOULD retain it alongside them with default:false."
+          "description": "Stable stem identifier. The id 'full' is RESERVED for the song's complete mixdown (spec 5.3): a Reader MUST NOT sum it with per-instrument stems, and a Writer that separates a pack MUST retain it alongside them with default:false (packs declaring feedpak_version >= 1.16.0; SHOULD for earlier packs)."
         },
         "file": { "$ref": "#/$defs/relpath" },
         "codec": { "type": "string", "minLength": 1 },

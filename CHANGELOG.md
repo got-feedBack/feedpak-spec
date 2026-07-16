@@ -11,6 +11,16 @@ relate.
 ## [Unreleased]
 
 ### Changed
+- **Retaining the `full` mixdown after separation is now a MUST** (§5.3), gated to the pack's own
+  version: a Writer producing a pack at `feedpak_version` ≥ 1.16.0 that separates a mixdown into
+  per-instrument stems **MUST** keep `full` (with `default: false`). It was a `SHOULD`. Separation
+  is lossy and the mixdown is unrecoverable once dropped, and consumers now depend on it — a Reader
+  that plays `full` at unity gain to avoid the separation loss degrades to a lossy recombination on
+  any pack that discarded it. The change is version-scoped, so **no existing pack becomes
+  non-conformant**: a pack authored before 1.16.0 is still judged by the `SHOULD` that was in force
+  when it was written. The obligation binds only the act of *separating* a mixdown — a pack of real
+  recorded multitrack stems, never separated, is unaffected. Additive in effect (MINOR); no new
+  keys and no structural change.
 - Docs (no format change): the §6.9 `tones.definitions` example now uses a neutral opaque
   placeholder instead of a source-specific field name. `definitions` is unchanged — still defined
   as raw, source-copied passthrough that Readers MUST preserve verbatim; only the illustrative
