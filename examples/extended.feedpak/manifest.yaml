@@ -1,7 +1,7 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
 # song timeline, and a drum tab. See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.15.0"
+feedpak_version: "1.16.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -52,6 +52,7 @@ stems:
     default: false
   - id: guitar
     file: stems/guitar.ogg
+    name: Guitar         # OPTIONAL display label; Readers fall back to `id` when absent (§5.3)
     default: true
   - id: drums
     file: stems/drums.ogg
@@ -60,6 +61,13 @@ stems:
     file: stems/vocals.ogg
     language: en
     default: true
+  # An authored extra stem (not part of the separation above) carrying the
+  # OPTIONAL presentational fields `name` and `description` (§5.3).
+  - id: click
+    file: stems/click.ogg
+    name: Click
+    description: "Metronome click with 4-count lead-in."
+    default: false
 stem_separation:         # provenance for the per-instrument stems above (§5.3.1)
   engine: demucs
   model: htdemucs_6s

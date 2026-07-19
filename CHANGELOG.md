@@ -8,7 +8,25 @@ and the specification is versioned per [Semantic Versioning](https://semver.org/
 [spec §4](spec/feedpak-v1.md#4-versioning) for how format, side-file, and document versions
 relate.
 
-## [Unreleased]
+## [1.16.0] - 2026-07-19
+
+Additive (MINOR) release: optional per-stem **display metadata**, and the retention of the
+`full` mixdown after separation is promoted from a SHOULD to a version-scoped MUST.
+
+Packs increasingly carry stems beyond the classic separation set — a rhythm guitar layer, a
+click track, an alternate backing track — and a Reader had nothing to show for them but the
+raw `id`. Stems were the only user-facing list in the manifest without a display label
+(`arrangements[]` and `lyric_tracks[]` both have `name`).
+
+### Added
+- **Optional per-stem `name` and `description`** ([§5.3](spec/feedpak-v1.md#53-stems)) — purely
+  presentational fields on a `stems[]` entry. `name` is a short display label for mixers and
+  stem lists; absent ⇒ a Reader falls back to the `id`, the same rule as `arrangements[].name`.
+  `description` is free-form text saying what the stem *is* (e.g. a click track's count-in);
+  a Reader MAY surface it and MAY ignore it. Neither carries semantics: `id` remains the
+  stable reference key, and a `name` on `full` changes none of §5.3's mixdown rules.
+  `schemas/manifest.schema.json` documents both on `stemEntry`; `examples/extended.feedpak`
+  carries a labelled `guitar` stem and an authored `click` stem exercising both fields.
 
 ### Changed
 - **Retaining the `full` mixdown after separation is now a MUST** (§5.3), gated to the pack's own
@@ -25,6 +43,12 @@ relate.
   placeholder instead of a source-specific field name. `definitions` is unchanged — still defined
   as raw, source-copied passthrough that Readers MUST preserve verbatim; only the illustrative
   field names in the example were genericised.
+
+### Compatibility
+- Purely additive. An older Reader ignores `name`/`description` and keeps displaying the stem
+  `id`; nothing is removed, renamed, or repurposed. The `full`-retention MUST binds only packs
+  declaring `feedpak_version` ≥ 1.16.0 — every earlier pack is still judged by the SHOULD in
+  force when it was written.
 
 ## [1.15.0] - 2026-07-13
 
