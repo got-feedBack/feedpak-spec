@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.15.0
+- **Specification version:** 1.16.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-07-02
+- **Date:** 2026-07-19
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.15.0"
+feedpak_version: "1.16.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.15.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.16.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -185,7 +185,12 @@ feedpak_version: "1.15.0"
   stem id [`full`](#the-full-stem--the-complete-mixdown) for the complete mixdown and asks Writers
   to retain that entry, `default: false`, after separating a pack into per-instrument stems. It is
   safe for an older Reader that honours [`default`](#53-stems) — normative since 1.0.0 — which is
-  precisely why the retained entry is specified as `default: false`.)
+  precisely why the retained entry is specified as `default: false`. 1.16.0 adds the optional
+  per-stem display fields [`name`](#53-stems) / [`description`](#53-stems) — purely
+  presentational, an older Reader ignores them and keeps showing the stem `id` — and tightens
+  the retention of [`full`](#the-full-stem--the-complete-mixdown) after separation from a SHOULD
+  to a MUST, scoped to packs declaring 1.16.0 or newer, so no earlier pack becomes
+  non-conformant.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -374,15 +379,26 @@ stems:
   - id: drums
     file: stems/drums.ogg
     default: true
+  - id: click
+    file: stems/click.ogg
+    name: "Click"        # OPTIONAL display label; Readers fall back to `id` when absent
+    description: "Metronome click with 4-count lead-in."
+    default: false
 ```
 
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `id` | string | — | **REQUIRED.** Stable identifier referenced by consumers. The id `full` is **RESERVED** for the complete mixdown — see [the `full` stem](#the-full-stem--the-complete-mixdown) below. |
 | `file` | string (path) | — | **REQUIRED.** Path to the audio file. |
+| `name` | string | `id` | OPTIONAL short display label for mixers and stem lists. Absent ⇒ a Reader falls back to the `id` (the same rule as [`arrangements[].name`](#52-arrangements)). |
+| `description` | string | — | OPTIONAL free-form text saying what the stem *is* (e.g. a click track's count-in and BPM, or which take an alternate backing track carries). A Reader **MAY** surface it (tooltip, detail line) and **MAY** ignore it. |
 | `codec` | string | — | OPTIONAL codec hint (e.g. `"vorbis"`, `"opus"`, `"pcm"`, `"mp3"`, `"flac"`). When absent, the codec is inferred from the file extension; when present it **overrides** the extension (see [§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)). Its main use is disambiguating an extension that doesn't pin the codec (container ≠ codec), but it MAY be set redundantly to be explicit. |
 | `language` | string | — | OPTIONAL [BCP 47](https://www.rfc-editor.org/info/bcp47) tag for a language-specific vocal stem (e.g. a `vocals_ja` stem with `language: ja` and a `vocals_en` stem with `language: en` for a song with two sung-language recordings). Absent ⇒ untagged — an instrumental stem or a stem whose language is unspecified. A [`lyric_tracks`](#55-lyric_tracks) entry's `stem` pointer pairs lyrics with the stem they were sung on. |
 | `default` | boolean | `false` | Whether this stem is enabled when the song opens. |
+
+`name` and `description` are presentational only — they carry **no semantics**. The `id`
+remains the stable key consumers reference (and the only field with a reserved value); a
+`name` on the `full` stem changes none of the rules below.
 
 `default` is logically boolean. For hand-edited convenience, Readers **MUST** also accept the
 case-insensitive strings `"true"`/`"false"`, `"on"`/`"off"`, and `"yes"`/`"no"`, mapping them to
