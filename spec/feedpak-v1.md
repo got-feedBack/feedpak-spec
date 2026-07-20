@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.16.0
+- **Specification version:** 1.17.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-07-19
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.16.0"
+feedpak_version: "1.17.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.16.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.17.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -190,7 +190,10 @@ feedpak_version: "1.16.0"
   presentational, an older Reader ignores them and keeps showing the stem `id` — and tightens
   the retention of [`full`](#the-full-stem--the-complete-mixdown) after separation from a SHOULD
   to a MUST, scoped to packs declaring 1.16.0 or newer, so no earlier pack becomes
-  non-conformant.)
+  non-conformant. 1.17.0 adds **drums as arrangements** — the arrangement `type` value
+  [`drums`](#52-arrangements) and an optional per-arrangement [`drum_tab`](#52-arrangements)
+  pointer, so a pack can carry more than one drum chart; additive, an older Reader keeps reading
+  the single song-level [`drum_tab`](#51-top-level-keys) and ignores the extra parts.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -330,7 +333,7 @@ stems:
 | `cover` | string (path) | no | Path to cover image (JPEG/PNG). |
 | `preview` | string (path) | no | Path to a short preview audio clip for hover-to-listen UIs. Same audio-format rules as stems ([§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)) — OGG/WAV baseline, other formats allowed behind it. |
 | `song_timeline` | string (path) | no | Path to a song-wide beats/sections file (see [§7.4](#74-song_timelinejson)). Takes priority over beats/sections embedded in arrangement JSON. |
-| `drum_tab` | string (path) | no | Path to a drum-tab file (see [§7.5](#75-drum_tabjson)). |
+| `drum_tab` | string (path) | no | Path to the song-level (primary) drum-tab file (see [§7.5](#75-drum_tabjson)). A pack with more than one drum part carries the extras as `type: drums` [arrangements](#52-arrangements); this key is then the primary drum part's back-compat alias (see [Multiple drum parts](#multiple-drum-parts)). |
 | `keys` | string (path) | no | Path to a key/scale-annotation file (see [§7.7](#77-keysjson)). |
 | `harmony` | string (path) | no | Path to a song-level harmony track (intended chord progression; see [§7.8](#78-harmonyjson)). |
 | `rigs` | string (path) | no | Path to an engine-agnostic rig library (amps/cabs/pedals as portable effect graphs; see [§7.9](#79-rigsjson)). |
@@ -356,12 +359,13 @@ arrangements:
 |---|---|---|---|
 | `id` | string | — | **REQUIRED.** Stable, filesystem-safe, lowercase identifier; used in filenames and referenced by consumers. |
 | `name` | string | `id` | Display name. |
-| `file` | string (path) | — | Path to the arrangement JSON (see [§6](#6-arrangement-json)). MAY be omitted only when `notation` is present (see below). |
+| `file` | string (path) | — | Path to the arrangement JSON (see [§6](#6-arrangement-json)). MAY be omitted only when `notation` or `drum_tab` is present (see below). |
 | `tuning` | int[] | `[0,0,0,0,0,0]` | Semitone offsets from standard `E2 A2 D2 G3 B3 E4`. Six elements is the standard 6-string-guitar convention; lengths **4–8** are accepted (4–6 = bass, 6–8 = extended-range guitar; length 6 is shared). Readers **MUST NOT** hard-code length 6. |
 | `capo` | int | `0` | Capo fret. |
 | `centOffset` | number | `0.0` | Pitch-shift in cents. Common values: `-1200.0` (one octave down for extended-range bass), small non-zero values for non-A440 reference pitch (e.g. A443 ≈ `+11.8`). |
-| `type` | string | — | OPTIONAL instrument hint (`guitar`, `bass`, `piano`, `violin`, …). |
+| `type` | string | — | OPTIONAL instrument hint (`guitar`, `bass`, `piano`, `violin`, `drums`, …). The value `drums` marks a **drum part**: its chart is a `drum_tab` (below), never a fretted `file` or `notation`, and it **MUST NOT** be selected or graded as a pitched/fretted arrangement. |
 | `notation` | string (path) | — | OPTIONAL path to a standard-notation file for this arrangement (see [§7.6](#76-notation_idjson)). When present, `file` MAY be omitted and the arrangement is notation-only. |
+| `drum_tab` | string (path) | — | OPTIONAL path to a per-arrangement [drum-tab file](#75-drum_tabjson), the same file shape the song-level [`drum_tab`](#75-drum_tabjson) key points at. Its presence makes the entry a **drum part** (`type` SHOULD be `drums`); `file` and `notation` are then omitted. A pack MAY carry several drum-part arrangements (e.g. two drummers, or an aux-percussion layer) — see [§7.5](#75-drum_tabjson) for how they relate to the song-level `drum_tab`. |
 
 Manifest-level `tuning`, `capo`, and `centOffset` **override** any equivalents embedded inside
 the arrangement JSON; the in-JSON values are fallbacks.
@@ -1093,7 +1097,10 @@ packages.
 
 ### 7.5. `drum_tab.json`
 
-Referenced by the manifest `drum_tab` key — per-piece drum hits:
+Referenced by the song-level [`drum_tab`](#51-top-level-keys) manifest key, or by an
+[arrangement entry's `drum_tab`](#52-arrangements) — per-piece drum hits (the file shape is the
+same for both). A pack MAY carry **several** drum parts as `type: drums` arrangements; see
+[Multiple drum parts](#multiple-drum-parts) below.
 
 ```json
 {
@@ -1152,6 +1159,39 @@ round-trip (a Reader renders them with a sensible default rather than erroring).
 | `ride` | cymbal | 51, 59 |
 | `ride_bell` | cymbal | 53 |
 | `bell` | cymbal | 80 |
+
+#### Multiple drum parts
+
+A song MAY have more than one drum chart — two drummers recorded separately, a programmed
+layer beside an acoustic kit, or an aux-percussion part. Each extra drum part is an
+[arrangement entry](#52-arrangements) with `type: drums` and its own `drum_tab` pointer (no
+`file`, no `notation`), exactly as a keys part is an entry with a `notation` pointer. This is
+purely additive over the single song-level [`drum_tab`](#51-top-level-keys) key:
+
+- **Single drum part (the common case, unchanged).** A pack with one drum chart carries only the
+  song-level `drum_tab` key and no `type: drums` arrangement. Nothing about it changes; a Writer
+  SHOULD keep emitting exactly this shape when there is one drum part.
+- **The song-level `drum_tab` is the PRIMARY part.** When a pack does carry `type: drums`
+  arrangements, a Writer **SHOULD** set the song-level `drum_tab` to the primary drum part's file
+  (the same path that part's arrangement-entry `drum_tab` points at), so that a Reader predating
+  this section still gets one sensible drum chart.
+- **Reader — no per-arrangement `drum_tab` support (older Reader).** It reads the song-level
+  `drum_tab` as the one drum part and treats each `type: drums` arrangement as an entry with no
+  `file` it can render — i.e. it silently ignores the extra parts. Graceful degradation to one
+  drummer, never an error.
+- **Reader — with per-arrangement `drum_tab` support.** It takes the pack's drum parts from the
+  `type: drums` arrangements (each via its own `drum_tab`). When such arrangements are present it
+  **MUST NOT** additionally load the song-level `drum_tab` as a separate part — that key is the
+  compat alias of the primary and points at one of those same files. When there are **no**
+  `type: drums` arrangements, the song-level `drum_tab`, if present, is the single drum part
+  (identical to prior versions).
+- **Grading/selection invariant.** A `type: drums` arrangement is a drum part: a consumer **MUST
+  NOT** select or score it as a pitched/fretted arrangement (a drum chart carries piece hits, not
+  string·fret or notated pitch, so grading it against a fretted or note detector is meaningless).
+
+Drum-tab filenames are the Writer's choice (resolve through the manifest pointer, never by
+scanning — [§2.2](#22-three-core-rules)); `drum_tab_<id>.json` alongside the primary `drum_tab.json`
+is a readable convention.
 
 ### 7.6. `notation_<id>.json`
 

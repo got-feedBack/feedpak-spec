@@ -8,6 +8,29 @@ and the specification is versioned per [Semantic Versioning](https://semver.org/
 [spec §4](spec/feedpak-v1.md#4-versioning) for how format, side-file, and document versions
 relate.
 
+## [1.17.0] - 2026-07-20
+
+Additive (MINOR) release: **drum charts become first-class arrangements**, so a pack can carry
+more than one — two drummers recorded separately, a programmed layer beside an acoustic kit, or
+an aux-percussion part. Until now drums were a single song-level `drum_tab` sidecar, the one part
+that was not an `arrangements[]` entry.
+
+### Added
+- **`type: "drums"` arrangement value + an optional per-arrangement `drum_tab` pointer**
+  ([§5.2](spec/feedpak-v1.md#52-arrangements), [§7.5](spec/feedpak-v1.md#75-drum_tabjson)). A drum
+  part is now an arrangement entry with `type: drums` and a `drum_tab` path (no `file`, no
+  `notation`) — mirroring how a keys part is an entry with a `notation` pointer. It is purely
+  additive over the song-level `drum_tab` key, which stays the **primary** drum part and its
+  back-compat alias: a Reader without per-arrangement `drum_tab` support reads that one drum chart
+  and ignores the extra `type: drums` entries (they carry no `file` to render), degrading
+  gracefully to one drummer; a Reader with support takes its drum parts from the arrangements and
+  does **not** double-load the song-level key. A single-drum pack is unchanged — it keeps emitting
+  only the song-level `drum_tab`. Normative: a `type: drums` arrangement **MUST NOT** be selected
+  or scored as a pitched/fretted arrangement. `schemas/manifest.schema.json` adds `drum_tab` to
+  `arrangementEntry` (and to its `file`/`notation` `anyOf`); `examples/extended.feedpak` carries a
+  primary `Drums` arrangement (aliasing the song-level `drum_tab`) and a second `Drums (Live)`
+  arrangement with its own `drum_tab_live.json`.
+
 ## [1.16.0] - 2026-07-19
 
 Additive (MINOR) release: optional per-stem **display metadata**, and the retention of the
@@ -210,7 +233,7 @@ portable pack.
 
 ### Added
 - **Audio stem formats beyond OGG** ([spec §5.3.2](spec/feedpak-v1.md#532-audio-formats--baseline-dispatch-and-portability),
-  [§1](spec/feedpak-v1.md#1-conventions)): stems are now dispatched **by file extension**, with a
+  [§1](spec/feedpak-v1.md#1-conformance)): stems are now dispatched **by file extension**, with a
   normative **decoder baseline** — a Reader **MUST** decode OGG (`.ogg`) and WAV (`.wav`) and
   **SHOULD** decode MP3 / FLAC / Opus. A new OPTIONAL `codec` hint on each `stems[]` entry
   disambiguates when an extension doesn't determine the codec (schema: `codec` on
