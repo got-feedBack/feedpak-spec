@@ -61,6 +61,7 @@
     "preview": { "$ref": "#/$defs/relpath" },
     "song_timeline": { "$ref": "#/$defs/relpath" },
     "drum_tab": { "$ref": "#/$defs/relpath" },
+    "drum_tones": { "type": "object", "$comment": "Drum-part sound binding; same shape as arrangement-entry tones (spec 5.1/5.2)." },
     "keys": { "$ref": "#/$defs/relpath" },
     "harmony": { "$ref": "#/$defs/relpath" },
     "rigs": { "$ref": "#/$defs/relpath" }
@@ -117,7 +118,8 @@
         "centOffset": { "type": "number" },
         "type": { "type": "string" },
         "notation": { "$ref": "#/$defs/relpath" },
-        "drum_tab": { "$ref": "#/$defs/relpath" }
+        "drum_tab": { "$ref": "#/$defs/relpath" },
+        "tones": { "type": "object", "$comment": "Sound binding; same shape as arrangement-JSON tones (spec 6.9). Overrides the in-JSON tones wholesale - precedence in spec 5.2." }
       },
       "anyOf": [
         { "required": ["file"] },

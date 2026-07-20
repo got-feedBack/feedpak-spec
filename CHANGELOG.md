@@ -8,6 +8,31 @@ and the specification is versioned per [Semantic Versioning](https://semver.org/
 [spec §4](spec/feedpak-v1.md#4-versioning) for how format, side-file, and document versions
 relate.
 
+## [1.18.0] - 2026-07-20
+
+Additive (MINOR) release: **MIDI-voiced sound sources** in the rig model — a chart can now
+declare what a MIDI part (piano, keys, drums) should sound like, with a guaranteed
+General-MIDI floor. FEP #61.
+
+- New reserved realization `engine`: `soundfont` (`source` blocks only; `format: "sf2"`
+  reserved, `format` open), addressed as library (`ref`) + voice (`bank`/`program`).
+- New reserved block `role`: `source` — a generator at the head of the signal chain whose
+  input is the Reader-supplied MIDI event stream (pack note data or live controller input
+  alike).
+- New OPTIONAL `intent.gm` on source blocks — a normative-when-present General-MIDI floor
+  (`{program}` melodic; `{percussion, kit}` kits, kit numbers 0-based wire/SF2 values) so a
+  GM-only Reader still voices the part.
+- Arrangement-entry `tones` (manifest, §5.2): bind a sound to any arrangement — including
+  notation-only and drum-part entries — with manifest-wins-**wholesale** precedence over
+  in-JSON `tones` (Writers SHOULD NOT emit both). New top-level `drum_tones` binds the
+  song-level (primary) drum part; on `type: drums` arrangements (1.17.0) the entry `tones`
+  takes precedence, `drum_tones` remaining the fallback for packs without drum arrangements.
+- §7.9 conformance: realization selection now stated as gating on `engine` **and** `format`
+  (general clarification, already implicitly true for `plugin`); source blocks SHOULD fall
+  back to `intent.gm` rather than skip; control events are honoured by whatever voices the
+  part.
+- Prose: rigs are instrument-neutral signal chains (§5.1, §6.9, §7.9 framing).
+
 ## [1.17.0] - 2026-07-20
 
 Additive (MINOR) release: **drum charts become first-class arrangements**, so a pack can carry

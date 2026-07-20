@@ -2,7 +2,7 @@
 # song timeline, and drum tabs (incl. multiple drum-part arrangements).
 # See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.17.0"
+feedpak_version: "1.18.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -40,6 +40,9 @@ arrangements:
     name: Keys
     type: piano
     notation: arrangements/notation_keys.json
+    tones:                       # manifest-level sound binding (§5.2) — a source rig in rigs.json
+      base: "Concert Grand"
+      base_rig: grand-piano
   # Drum charts as first-class arrangements (§5.2, §7.5). A `type: drums`
   # entry has neither `file` nor `notation`; its chart is a per-arrangement
   # `drum_tab` pointer. The PRIMARY drum part points at the same file as the
@@ -113,6 +116,9 @@ vocal_pitch: vocal_pitch.json
 vocal_pitch_contour: vocal_pitch_contour.json
 song_timeline: song_timeline.json
 drum_tab: drum_tab.json
+drum_tones:                # drum-part sound binding (§5.1) — kit source rig in rigs.json
+  base: "Rock Kit"
+  base_rig: rock-kit
 keys: keys.json
 harmony: harmony.json
 rigs: rigs.json          # engine-agnostic rig library (spec §7.8)

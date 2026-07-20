@@ -7,7 +7,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.17.0
+- **Specification version:** 1.18.0
 - **Format major version:** 1
 - **Status:** Draft
 - **Date:** 2026-07-20
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.17.0"
+feedpak_version: "1.18.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.17.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.18.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -193,7 +193,11 @@ feedpak_version: "1.17.0"
   non-conformant. 1.17.0 adds **drums as arrangements** — the arrangement `type` value
   [`drums`](#52-arrangements) and an optional per-arrangement [`drum_tab`](#52-arrangements)
   pointer, so a pack can carry more than one drum chart; additive, an older Reader keeps reading
-  the single song-level [`drum_tab`](#51-top-level-keys) and ignores the extra parts.)
+  the single song-level [`drum_tab`](#51-top-level-keys) and ignores the extra parts. 1.18.0 adds MIDI-voiced **sound sources** to the rig model — the reserved
+  realization engine [`soundfont`](#79-rigsjson), the reserved block role [`source`](#79-rigsjson),
+  the normative-when-present [`intent.gm`](#79-rigsjson) General-MIDI floor, and the manifest
+  binding keys (arrangement-entry [`tones`](#52-arrangements), top-level
+  [`drum_tones`](#51-top-level-keys)) — all additive, an older Reader ignores them.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -334,9 +338,10 @@ stems:
 | `preview` | string (path) | no | Path to a short preview audio clip for hover-to-listen UIs. Same audio-format rules as stems ([§5.3.2](#532-audio-formats--baseline-dispatch-and-portability)) — OGG/WAV baseline, other formats allowed behind it. |
 | `song_timeline` | string (path) | no | Path to a song-wide beats/sections file (see [§7.4](#74-song_timelinejson)). Takes priority over beats/sections embedded in arrangement JSON. |
 | `drum_tab` | string (path) | no | Path to the song-level (primary) drum-tab file (see [§7.5](#75-drum_tabjson)). A pack with more than one drum part carries the extras as `type: drums` [arrangements](#52-arrangements); this key is then the primary drum part's back-compat alias (see [Multiple drum parts](#multiple-drum-parts)). |
+| `drum_tones` | object | no | Sound binding for the **song-level (primary)** drum part — same shape as an arrangement entry's `tones` ([§5.2](#52-arrangements)). When the pack carries `type: drums` arrangements, each drum part binds through its entry `tones`, which **takes precedence**; `drum_tones` is the fallback binding for packs without drum arrangements, and a Reader **MUST NOT** apply both to the same part (see [Multiple drum parts](#multiple-drum-parts)). References kit rigs in [`rigs.json`](#79-rigsjson). |
 | `keys` | string (path) | no | Path to a key/scale-annotation file (see [§7.7](#77-keysjson)). |
 | `harmony` | string (path) | no | Path to a song-level harmony track (intended chord progression; see [§7.8](#78-harmonyjson)). |
-| `rigs` | string (path) | no | Path to an engine-agnostic rig library (amps/cabs/pedals as portable effect graphs; see [§7.9](#79-rigsjson)). |
+| `rigs` | string (path) | no | Path to an engine-agnostic rig library — portable signal chains: effect graphs and, since 1.18.0, MIDI-voiced sound sources (see [§7.9](#79-rigsjson)). |
 
 Any key not listed here is an **extension key** and **MUST** be ignored by Readers that do not
 understand it (see [§9](#9-extending-the-format)).
@@ -366,9 +371,13 @@ arrangements:
 | `type` | string | — | OPTIONAL instrument hint (`guitar`, `bass`, `piano`, `violin`, `drums`, …). The value `drums` marks a **drum part**: its chart is a `drum_tab` (below), never a fretted `file` or `notation`, and it **MUST NOT** be selected or graded as a pitched/fretted arrangement. |
 | `notation` | string (path) | — | OPTIONAL path to a standard-notation file for this arrangement (see [§7.6](#76-notation_idjson)). When present, `file` MAY be omitted and the arrangement is notation-only. |
 | `drum_tab` | string (path) | — | OPTIONAL path to a per-arrangement [drum-tab file](#75-drum_tabjson), the same file shape the song-level [`drum_tab`](#75-drum_tabjson) key points at. Its presence makes the entry a **drum part** (`type` SHOULD be `drums`); `file` and `notation` are then omitted. A pack MAY carry several drum-part arrangements (e.g. two drummers, or an aux-percussion layer) — see [§7.5](#75-drum_tabjson) for how they relate to the song-level `drum_tab`. |
+| `tones` | object | — | OPTIONAL sound binding for this arrangement — same shape as the arrangement JSON's [`tones`](#69-tones-optional) (§6.9): `base`, `base_rig`, `changes[]`, referencing rig ids in [`rigs.json`](#79-rigsjson). Available whether or not the arrangement has a `file` (notation-only and drum-part entries included). See the precedence rule below. |
 
 Manifest-level `tuning`, `capo`, and `centOffset` **override** any equivalents embedded inside
-the arrangement JSON; the in-JSON values are fallbacks.
+the arrangement JSON; the in-JSON values are fallbacks. The same direction applies to `tones` —
+and **wholesale**: when an arrangement entry carries `tones`, it **replaces the arrangement
+JSON's `tones` object entirely** (no field-level merge); the in-JSON `tones` is the fallback
+when the entry carries none. A Writer **SHOULD NOT** emit both.
 
 ### 5.3. `stems[]`
 
@@ -871,8 +880,9 @@ rule.
 
 ### 6.9. Tones (OPTIONAL)
 
-`tones` carries the arrangement's gear (amp/pedal/cabinet) and in-song tone switches. Omitted
-when the source carries no tone data.
+`tones` carries the arrangement's sound — its rigs (effect chains and/or MIDI-voiced sound
+sources, [§7.9](#79-rigsjson)) — and in-song tone switches. Omitted when the source carries no
+tone data.
 
 ```jsonc
 "tones": {
@@ -907,6 +917,10 @@ A pack MAY carry both; a rig-aware Reader **SHOULD** prefer the `rig`/`base_rig`
 - `definitions` (list, OPTIONAL) — raw, opaque tone objects copied from the source.
 
 All sub-keys are individually OPTIONAL.
+
+When the manifest arrangement entry also carries a `tones` object ([§5.2](#52-arrangements)),
+the manifest entry **overrides this one wholesale** — see the precedence rule there. A Writer
+**SHOULD NOT** emit both.
 
 ### 6.10. Per-arrangement tempo (OPTIONAL)
 
@@ -1342,8 +1356,10 @@ progression is a separate, dependent proposal, not part of this track.)
 
 ### 7.9. `rigs.json`
 
-Referenced by the manifest `rigs` key — a **pack-level library of engine-agnostic rigs** (guitar
-/ bass tones as portable effect graphs). Arrangements bind rigs to time via
+Referenced by the manifest `rigs` key — a **pack-level library of engine-agnostic rigs**:
+portable signal chains. A rig can describe an **effect chain** for an incoming audio signal
+(guitar / bass tones — amps, cabs, pedals) or, since 1.18.0, a **sound source** that voices a
+MIDI part (piano, keys, drums), or both in one chain. Arrangements bind rigs to time via
 [`tones.base_rig`](#69-tones-optional) / [`tones.changes[].rig`](#69-tones-optional) (§6.9), which
 reference a rig's `id` here. Rigs live pack-level (not per-arrangement) so one rig can be shared
 across arrangements and tone changes.
@@ -1405,7 +1421,7 @@ to render it* (`realizations`, an ordered preference list).
 |---|---|---|
 | `id` | string | REQUIRED. Stable id referenced by `tones.base_rig` / `changes[].rig`. |
 | `name` | string | OPTIONAL, human-readable. |
-| `instrument` | string | OPTIONAL hint (`guitar`, `bass`, …). Non-normative. |
+| `instrument` | string | OPTIONAL hint (`guitar`, `bass`, `keys`, `drums`, …). Non-normative. |
 | `channels` | integer ≥ 1 | OPTIONAL. Channels the rig is authored for; default `1`. |
 | `blocks` | array | REQUIRED. Ordered serial signal chain (`input → blocks[0] → … → output`) unless `graph` overrides. |
 | `graph` | object | OPTIONAL. Explicit `{nodes, edges}` topology for non-serial rigs. |
@@ -1415,25 +1431,62 @@ to render it* (`realizations`, an ordered preference list).
 | Field | Type | Notes |
 |---|---|---|
 | `id` | string | REQUIRED only if the block is referenced from `graph`. |
-| `role` | string | Open vocabulary (`gain`, `drive`, `amp`, `cab`, `eq`, `dynamics`, `modulation`, `delay`, `reverb`, `pitch`, `filter`, `utility`, …). Unknown values MUST be preserved. |
+| `role` | string | Open vocabulary (`source`, `gain`, `drive`, `amp`, `cab`, `eq`, `dynamics`, `modulation`, `delay`, `reverb`, `pitch`, `filter`, `utility`, …). Reserved: `source` (see below). Unknown values MUST be preserved. |
 | `name` | string | Human-readable. |
 | `bypassed` | boolean | Default `false`. |
 | `mix` | number 0..1 | Wet/dry mix; default `1`. |
-| `intent` | object | Engine-independent description — `kind`, `family`, `model` (non-normative hints), `tags`. Lets a Reader with no matching realization still display / approximate / remap the block. |
+| `intent` | object | Engine-independent description — `kind`, `family`, `model` (non-normative hints), `tags`, and, on a `source` block, an OPTIONAL **`gm`** object (normative-when-present, see below). Lets a Reader with no matching realization still display / approximate / remap the block — or, for a source block with `gm`, **voice** it. |
 | `realizations` | array | Ordered by preference. A Reader renders the **first** realization whose `engine` it supports; if it supports none, it falls back to `intent`. |
 | `params` | object | Open map of named controls: a number (normalized `0..1`), a string (discrete/enum), a boolean, or `{value, unit}` (e.g. `{"value": 320, "unit": "ms"}`). Not limited to any fixed knob set. |
 | `automation` | array | OPTIONAL. `{param, points: [{t, v}]}` lanes; time-sorted, value held to the next point. |
+
+**`role: "source"` — generator blocks.** A block with `role: "source"` is a **generator at the
+head of the signal chain**: its input is **MIDI events supplied by the Reader** — whether those
+come from the pack's own note data (notation, drum-tab) during playback or from the player's
+live controller input is the Reader's business, not the pack's; the same declared sound voices
+both. A `source` block feeds ordinary effect blocks (`input(MIDI) → source → amp → reverb →
+output`); a rig that is *just* an instrument is a single `source` block. When the head block is
+a `source`, the rig's `input` node is the Reader-supplied MIDI event stream rather than an audio
+input; a source-headed rig has no audio input (a rig mixing a source head with parallel audio
+input is out of scope). On a `source` block, `bypassed: true` means the part is not voiced by
+this rig (an author mute — the same outcome as skipping the block, not a fall-through to
+`intent.gm`), and `mix` has no meaning (there is no dry signal): Readers SHOULD ignore it and
+Writers SHOULD omit it.
+
+**`intent.gm` — the General MIDI floor.** A `source` block's `intent` MAY carry a GM identity so
+that a Reader supporting no matching realization can still voice the part from a General MIDI
+baseline:
+
+```jsonc
+"intent": {
+  "kind": "instrument",
+  "gm": { "program": 0 }        // melodic: GM program 0..127, 0-based (0 = Acoustic Grand)
+  // or, for a percussion kit:
+  // "gm": { "percussion": true, "kit": 0 }
+}
+```
+
+Kit numbers use the **0-based** wire/SF2 numbering (0 = Standard, 8 = Room, 16 = Power,
+24 = Electronic, …) — the values that travel in MIDI program-change bytes and appear as SF2
+bank-128 preset numbers — matching `gm.program`'s 0-based convention. (GM documentation often
+counts kits 1-based; that display convention is not used here.)
+
+Unlike every other `intent` field, `gm` is **normative when present**: it is the first `intent`
+content a Reader renders *audio* from. A Writer **SHOULD** give every `source` block a GM
+`intent`, for the same reason it should give an effect block an `intent`: so the pack stays
+renderable everywhere.
 
 **Realization** (`realizations[]`):
 
 | Field | Type | Notes |
 |---|---|---|
-| `engine` | string | REQUIRED. Open vocabulary. Reserved: `nam` (Neural Amp Modeler capture), `ir` (impulse response), `plugin` (host plugin), `builtin` (host DSP by id). |
-| `ref` | string | For `nam`/`ir`: pack-relative path (no leading `/`, no `..` — see [§8](#8-reading-and-writing)) or absolute URI. |
+| `engine` | string | REQUIRED. Open vocabulary. Reserved: `nam` (Neural Amp Modeler capture), `ir` (impulse response), `plugin` (host plugin), `builtin` (host DSP by id), `soundfont` (MIDI-voiced sound source — `source` blocks only). |
+| `ref` | string | For `nam`/`ir`/`soundfont`: pack-relative path (no leading `/`, no `..` — see [§8](#8-reading-and-writing)) or absolute URI. REQUIRED for `soundfont`. |
 | `sha256` | string | OPTIONAL integrity hash of the referenced asset. |
-| `format` | string | For `plugin`: `vst3` \| `au` \| `lv2` \| `clap` \| … (open). |
+| `format` | string | For `plugin`: `vst3` \| `au` \| `lv2` \| `clap` \| … (open). For `soundfont`: `sf2` (reserved; open — future formats such as `sfz` or `ds` are added as renderers appear, each defining its own voice-addressing fields). |
 | `id` | string | For `plugin`: bundle/unique id; for `builtin`: the host DSP id. |
 | `name`, `vendor`, `preset` | string | OPTIONAL plugin identity/preset hints. |
+| `bank`, `program` | integer | Voice selector for `engine: "soundfont"`, `format: "sf2"` (SF2 bank + preset number). Named `program`, not `preset`: `preset` is already reserved above as a **string** (plugin preset-name hint), and `program` matches `intent.gm.program`. OPTIONAL; absent ⇒ `0` (the SF2 default bank/preset). Other soundfont formats select the voice by their own means, documented per format. |
 | `state` | string (base64) | OPTIONAL opaque plugin state for exact recall. MUST NOT be the only representation — pair with `intent`/`params` so a Reader without that plugin can still render something. |
 | `params` | object | Same shape as block `params`; realization-specific control values. |
 
@@ -1442,8 +1495,18 @@ to render it* (`realizations`, an ordered preference list).
 - A Writer **SHOULD** give every block an `intent` even when it also emits a `state` blob, so the
   rig stays renderable by Readers that lack the exact plugin/capture.
 - A Reader that renders rigs **SHOULD** select, per block, the first `realizations[]` entry whose
-  `engine` it supports; if none match, it **MAY** synthesize from `intent`/`params` or skip the
-  block, and **MUST NOT** fail the whole pack.
+  `engine` — and `format`, where the engine defines one — it supports; if none match, it **MAY**
+  synthesize from `intent`/`params` or skip the block, and **MUST NOT** fail the whole pack.
+  (The `format` gate is a general clarification, not a soundfont rule: it was always implicitly
+  true — a Reader without VST3 hosting never could render a `format: "vst3"` realization.)
+- **Source blocks tighten the skip rule.** Skipping an *effect* is benign (the signal passes
+  through); skipping a *source* silences the part. A Reader that renders source rigs and matches
+  no realization **SHOULD voice the part from `intent.gm` when present**; with no matching
+  realization *and* no `intent.gm`, skipping remains the outcome. Skipping a source block is a
+  last resort, not the peer fallback it is for effect blocks.
+- A Reader voicing a `source` block — from a realization or from `intent.gm` — **SHOULD honour
+  the part's control events** (sustain pedal `spd`/`sph`/`spu`, [§7.6](#76-notation_idjson);
+  hi-hat pedal and chokes, [§7.5](#75-drum_tabjson)).
 - A Reader that does not interpret rigs **MUST** ignore `rigs.json` and preserve it verbatim on
   round-trip, along with any unknown `role`/`engine`/`kind` values and `ext` namespaces.
 
