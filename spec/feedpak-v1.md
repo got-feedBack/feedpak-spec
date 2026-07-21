@@ -1436,7 +1436,7 @@ to render it* (`realizations`, an ordered preference list).
 | `bypassed` | boolean | Default `false`. |
 | `mix` | number 0..1 | Wet/dry mix; default `1`. |
 | `intent` | object | Engine-independent description — `kind`, `family`, `model` (non-normative hints), `tags`, and, on a `source` block, an OPTIONAL **`gm`** object (normative-when-present, see below). Lets a Reader with no matching realization still display / approximate / remap the block — or, for a source block with `gm`, **voice** it. |
-| `realizations` | array | Ordered by preference. A Reader renders the **first** realization whose `engine` it supports; if it supports none, it falls back to `intent`. |
+| `realizations` | array | Ordered by preference. A Reader renders the **first** realization whose `engine` (and `format`, where the engine defines one) it supports; if it supports none, it falls back to `intent`. |
 | `params` | object | Open map of named controls: a number (normalized `0..1`), a string (discrete/enum), a boolean, or `{value, unit}` (e.g. `{"value": 320, "unit": "ms"}`). Not limited to any fixed knob set. |
 | `automation` | array | OPTIONAL. `{param, points: [{t, v}]}` lanes; time-sorted, value held to the next point. |
 

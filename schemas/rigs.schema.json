@@ -45,7 +45,7 @@
         "intent": { "$ref": "#/$defs/intent" },
         "realizations": {
           "type": "array",
-          "$comment": "Ordered by preference; a reader renders the FIRST realization whose `engine` it supports. If it supports none, it falls back to `intent`.",
+          "$comment": "Ordered by preference; a reader renders the FIRST realization whose `engine` (and `format`, where the engine defines one) it supports. If it supports none, it falls back to `intent`.",
           "items": { "$ref": "#/$defs/realization" }
         },
         "params": { "$ref": "#/$defs/params" },

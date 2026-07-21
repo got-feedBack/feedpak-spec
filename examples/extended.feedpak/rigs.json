@@ -107,9 +107,9 @@
         {
           "role": "source",
           "name": "Rock Kit",
-          "intent": { "kind": "instrument", "gm": { "percussion": true, "kit": 0 } },
+          "intent": { "kind": "instrument", "gm": { "percussion": true, "kit": 16 } },
           "realizations": [
-            { "engine": "soundfont", "format": "sf2", "ref": "sf/rock-kit.sf2", "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "bank": 128, "program": 0 }
+            { "engine": "soundfont", "format": "sf2", "ref": "sf/rock-kit.sf2", "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "bank": 128, "program": 16 }
           ]
         }
       ]
