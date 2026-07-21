@@ -1199,6 +1199,14 @@ purely additive over the single song-level [`drum_tab`](#51-top-level-keys) key:
   compat alias of the primary and points at one of those same files. When there are **no**
   `type: drums` arrangements, the song-level `drum_tab`, if present, is the single drum part
   (identical to prior versions).
+- **Sound binding.** A `type: drums` arrangement binds its sound through its entry
+  [`tones`](#52-arrangements) like any other arrangement. The top-level
+  [`drum_tones`](#51-top-level-keys) key binds the song-level (primary) drum part and is the
+  **fallback** for packs without `type: drums` arrangements; when such arrangements are present,
+  the entry `tones` **takes precedence** and a Reader **MUST NOT** additionally apply
+  `drum_tones` to the same part — mirroring the `drum_tab` alias rule above. A Writer SHOULD
+  keep `drum_tones` matching the primary part's binding, exactly as the song-level `drum_tab`
+  mirrors the primary part's chart.
 - **Grading/selection invariant.** A `type: drums` arrangement is a drum part: a consumer **MUST
   NOT** select or score it as a pitched/fretted arrangement (a drum chart carries piece hits, not
   string·fret or notated pitch, so grading it against a fretted or note detector is meaningless).
@@ -1469,7 +1477,8 @@ baseline:
 Kit numbers use the **0-based** wire/SF2 numbering (0 = Standard, 8 = Room, 16 = Power,
 24 = Electronic, …) — the values that travel in MIDI program-change bytes and appear as SF2
 bank-128 preset numbers — matching `gm.program`'s 0-based convention. (GM documentation often
-counts kits 1-based; that display convention is not used here.)
+counts kits 1-based; that display convention is not used here.) `kit` absent ⇒ `0` (Standard),
+matching the `bank`/`program` rule.
 
 Unlike every other `intent` field, `gm` is **normative when present**: it is the first `intent`
 content a Reader renders *audio* from. A Writer **SHOULD** give every `source` block a GM

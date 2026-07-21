@@ -54,6 +54,9 @@ arrangements:
     name: Drums
     type: drums
     drum_tab: drum_tab.json
+    tones:                       # entry tones take precedence; drum_tones below mirrors this (§7.5)
+      base: "Rock Kit"
+      base_rig: rock-kit
   - id: drums_live
     name: Drums (Live)
     type: drums
@@ -116,7 +119,7 @@ vocal_pitch: vocal_pitch.json
 vocal_pitch_contour: vocal_pitch_contour.json
 song_timeline: song_timeline.json
 drum_tab: drum_tab.json
-drum_tones:                # drum-part sound binding (§5.1) — kit source rig in rigs.json
+drum_tones:                # primary drum part's sound alias (§5.1/§7.5) — mirrors drums_kit's entry tones
   base: "Rock Kit"
   base_rig: rock-kit
 keys: keys.json

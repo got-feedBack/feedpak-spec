@@ -72,7 +72,7 @@
           "properties": {
             "program": { "type": "integer", "minimum": 0, "maximum": 127, "$comment": "Melodic GM program, 0-based (0 = Acoustic Grand)." },
             "percussion": { "type": "boolean" },
-            "kit": { "type": "integer", "minimum": 0, "$comment": "0-based wire/SF2 kit number (0 = Standard, 8 = Room, 16 = Power, 24 = Electronic)." }
+            "kit": { "type": "integer", "minimum": 0, "$comment": "0-based wire/SF2 kit number (0 = Standard, 8 = Room, 16 = Power, 24 = Electronic). Absent => 0." }
           }
         }
       }

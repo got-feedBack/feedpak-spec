@@ -20,7 +20,8 @@ General-MIDI floor. FEP #61.
   input is the Reader-supplied MIDI event stream (pack note data or live controller input
   alike).
 - New OPTIONAL `intent.gm` on source blocks — a normative-when-present General-MIDI floor
-  (`{program}` melodic; `{percussion, kit}` kits, kit numbers 0-based wire/SF2 values) so a
+  (`{program}` melodic; `{percussion, kit}` kits, kit numbers 0-based wire/SF2 values,
+  absent ⇒ `0`) so a
   GM-only Reader still voices the part.
 - Arrangement-entry `tones` (manifest, §5.2): bind a sound to any arrangement — including
   notation-only and drum-part entries — with manifest-wins-**wholesale** precedence over
