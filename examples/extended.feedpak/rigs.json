@@ -82,6 +82,37 @@
         "nodes": ["input", "boost", "amp", "cab", "delay", "output"],
         "edges": [["input", "boost"], ["boost", "amp"], ["amp", "cab"], ["cab", "delay"], ["delay", "output"]]
       }
+    },
+    {
+      "id": "grand-piano",
+      "name": "Concert Grand",
+      "instrument": "keys",
+      "channels": 2,
+      "blocks": [
+        {
+          "role": "source",
+          "name": "Concert Grand",
+          "intent": { "kind": "instrument", "gm": { "program": 0 } },
+          "realizations": [
+            { "engine": "soundfont", "format": "sf2", "ref": "sf/concert-grand.sf2", "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "bank": 0, "program": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rock-kit",
+      "name": "Rock Kit",
+      "instrument": "drums",
+      "blocks": [
+        {
+          "role": "source",
+          "name": "Rock Kit",
+          "intent": { "kind": "instrument", "gm": { "percussion": true, "kit": 16 } },
+          "realizations": [
+            { "engine": "soundfont", "format": "sf2", "ref": "sf/rock-kit.sf2", "sha256": "0000000000000000000000000000000000000000000000000000000000000000", "bank": 128, "program": 16 }
+          ]
+        }
+      ]
     }
   ]
 }

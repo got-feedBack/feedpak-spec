@@ -38,14 +38,14 @@
       "$comment": "One effect stage. `intent` says what it is (engine-agnostic); `realizations` say how to render it.",
       "properties": {
         "id": { "type": "string", "$comment": "Required only if the block is referenced from `graph`." },
-        "role": { "type": "string", "$comment": "Open vocabulary: gain, drive, amp, cab, eq, dynamics, modulation, delay, reverb, pitch, filter, utility, … Unknown values MUST be preserved." },
+        "role": { "type": "string", "$comment": "Open vocabulary: source (reserved: MIDI-voiced generator at the head of the chain), gain, drive, amp, cab, eq, dynamics, modulation, delay, reverb, pitch, filter, utility, … Unknown values MUST be preserved." },
         "name": { "type": "string" },
         "bypassed": { "type": "boolean" },
         "mix": { "type": "number", "minimum": 0, "maximum": 1, "$comment": "Wet/dry mix, 0..1. Default 1 (fully wet)." },
         "intent": { "$ref": "#/$defs/intent" },
         "realizations": {
           "type": "array",
-          "$comment": "Ordered by preference; a reader renders the FIRST realization whose `engine` it supports. If it supports none, it falls back to `intent`.",
+          "$comment": "Ordered by preference; a reader renders the FIRST realization whose `engine` (and `format`, where the engine defines one) it supports. If it supports none, it falls back to `intent`.",
           "items": { "$ref": "#/$defs/realization" }
         },
         "params": { "$ref": "#/$defs/params" },
@@ -64,7 +64,17 @@
         "kind": { "type": "string", "$comment": "Open vocabulary: amp, cab, drive, fuzz, compressor, eq, chorus, phaser, flanger, tremolo, delay, reverb, pitch, gate, boost, … " },
         "family": { "type": "string", "$comment": "Non-normative family/character, e.g. 'british-hi-gain', '4x12', 'tube-screamer'." },
         "model": { "type": "string", "$comment": "Non-normative model hint. MUST NOT be a trademarked product name in distributed packs." },
-        "tags": { "type": "array", "items": { "type": "string" } }
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "gm": {
+          "type": "object",
+          "additionalProperties": true,
+          "$comment": "GM floor for a source block. Normative-when-present: a reader with no matching realization SHOULD voice from it.",
+          "properties": {
+            "program": { "type": "integer", "minimum": 0, "maximum": 127, "$comment": "Melodic GM program, 0-based (0 = Acoustic Grand)." },
+            "percussion": { "type": "boolean" },
+            "kit": { "type": "integer", "minimum": 0, "$comment": "0-based wire/SF2 kit number (0 = Standard, 8 = Room, 16 = Power, 24 = Electronic). Absent => 0." }
+          }
+        }
       }
     },
     "realization": {
@@ -73,8 +83,8 @@
       "additionalProperties": true,
       "$comment": "A concrete way to render the block. New engines are new `engine` values; older readers skip what they don't support.",
       "properties": {
-        "engine": { "type": "string", "$comment": "Open vocabulary. Reserved values: 'nam' (Neural Amp Modeler capture), 'ir' (impulse response), 'plugin' (host plugin), 'builtin' (host DSP by id)." },
-        "ref": { "type": "string", "$comment": "For 'nam'/'ir': pack-relative path (no leading '/', no '..') or absolute URI to the asset." },
+        "engine": { "type": "string", "$comment": "Open vocabulary. Reserved values: 'nam' (Neural Amp Modeler capture), 'ir' (impulse response), 'plugin' (host plugin), 'builtin' (host DSP by id), 'soundfont' (MIDI-voiced sound source; source blocks only)." },
+        "ref": { "type": "string", "$comment": "For 'nam'/'ir'/'soundfont': pack-relative path (no leading '/', no '..') or absolute URI to the asset. REQUIRED for 'soundfont'." },
         "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$", "$comment": "Optional integrity hash of the referenced asset." },
         "channels": { "type": "integer", "minimum": 1 },
         "format": { "type": "string", "$comment": "For engine='plugin': 'vst3' | 'au' | 'lv2' | 'clap' | … (open)." },
@@ -82,6 +92,8 @@
         "name": { "type": "string" },
         "vendor": { "type": "string" },
         "preset": { "type": "string" },
+        "bank": { "type": "integer", "minimum": 0, "$comment": "For engine='soundfont', format='sf2': SF2 bank number. Absent => 0." },
+        "program": { "type": "integer", "minimum": 0, "maximum": 127, "$comment": "For engine='soundfont', format='sf2': SF2 preset number. Absent => 0. Named 'program' to match intent.gm.program; 'preset' is already the string plugin-preset hint." },
         "state": { "type": "string", "$comment": "Optional opaque plugin state, base64. Exact-recall; never the ONLY representation (pair with intent/params)." },
         "params": { "$ref": "#/$defs/params" }
       }
