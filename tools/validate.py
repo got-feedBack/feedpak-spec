@@ -211,9 +211,10 @@ def validate_dir(root: Path, rep: Report) -> None:
                 "this validator may not understand it"
             )
 
-    # 3. arrangements: each entry's file + optional notation
+    # 3. arrangements: each entry's file + optional notation + optional drum_tab
     arr_validator = load_schema("arrangement.schema.json")
     notation_validator = load_schema("notation.schema.json")
+    drum_tab_validator = load_schema(SIDE_FILE_SCHEMAS["drum_tab"])
     for i, arr in enumerate(manifest.get("arrangements", []) or []):
         if not isinstance(arr, dict):
             continue
@@ -223,6 +224,9 @@ def validate_dir(root: Path, rep: Report) -> None:
         n = arr.get("notation")
         if n is not None and check_pointer_exists(root, n, f"arrangements[{i}].notation", rep):
             validate_json_file(root, n, notation_validator, rep)
+        d = arr.get("drum_tab")
+        if d is not None and check_pointer_exists(root, d, f"arrangements[{i}].drum_tab", rep):
+            validate_json_file(root, d, drum_tab_validator, rep)
 
     # 4. stems: each file must exist
     for i, st in enumerate(manifest.get("stems", []) or []):

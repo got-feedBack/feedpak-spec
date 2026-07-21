@@ -10,7 +10,7 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 - **Specification version:** 1.17.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-07-19
+- **Date:** 2026-07-20
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
