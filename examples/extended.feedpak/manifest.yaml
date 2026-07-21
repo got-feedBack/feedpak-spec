@@ -1,7 +1,8 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
-# song timeline, and a drum tab. See spec/feedpak-v1.md §5 and §7.
+# song timeline, and drum tabs (incl. multiple drum-part arrangements).
+# See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.16.0"
+feedpak_version: "1.17.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -39,6 +40,21 @@ arrangements:
     name: Keys
     type: piano
     notation: arrangements/notation_keys.json
+  # Drum charts as first-class arrangements (§5.2, §7.5). A `type: drums`
+  # entry has neither `file` nor `notation`; its chart is a per-arrangement
+  # `drum_tab` pointer. The PRIMARY drum part points at the same file as the
+  # top-level `drum_tab` below — that key is its back-compat alias, so a Reader
+  # that predates this stays with one drum. A SECOND drum part (a live take,
+  # here) carries its own file — invisible to an old Reader, a distinct chart
+  # to a new one.
+  - id: drums_kit
+    name: Drums
+    type: drums
+    drum_tab: drum_tab.json
+  - id: drums_live
+    name: Drums (Live)
+    type: drums
+    drum_tab: drum_tab_live.json
 stems:
   # A separated pack: the RESERVED `full` mixdown is RETAINED alongside the
   # per-instrument stems it was split into (§5.3). It is not an instrument

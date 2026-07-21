@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "Drums (Live)",
+  "kit": [
+    {"id": "kick", "name": "Kick"},
+    {"id": "snare", "name": "Snare"},
+    {"id": "hh_open", "name": "Hi-hat (open)"},
+    {"id": "ride", "name": "Ride"},
+    {"id": "crash_l", "name": "Crash (left)"}
+  ],
+  "hits": [
+    {"t": 0.00, "p": "kick", "v": 118},
+    {"t": 0.00, "p": "crash_l", "v": 124, "k": 0.10},
+    {"t": 0.50, "p": "ride", "v": 80},
+    {"t": 1.00, "p": "snare", "v": 98},
+    {"t": 1.50, "p": "ride", "v": 78},
+    {"t": 2.00, "p": "kick", "v": 118},
+    {"t": 2.50, "p": "hh_open", "v": 84},
+    {"t": 3.00, "p": "snare", "v": 105, "f": true}
+  ]
+}

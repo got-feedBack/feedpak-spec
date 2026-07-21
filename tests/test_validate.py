@@ -139,6 +139,23 @@ def test_empty_arrangement_tempos_fails(tmp_path):
     assert any("tempos" in e for e in rep.errors)
 
 
+def test_per_arrangement_drum_tab_is_validated(tmp_path):
+    # A `type: drums` arrangement's own `drum_tab` pointer must be resolved and
+    # schema-validated, not ignored. Here the pointed-at file is missing the
+    # required `hits` array — pre-fix the validator never opened it and passed.
+    m = _base_manifest()
+    m["arrangements"].append(
+        {"id": "drums", "name": "Drums", "type": "drums", "drum_tab": "drum_tab.json"}
+    )
+    bad_drum_tab = json.dumps({"version": 1})  # no "hits"
+    pack = _make_pack(
+        tmp_path / "bad.feedpak", m, extra={"drum_tab.json": bad_drum_tab}
+    )
+    rep = validate.resolve_and_validate(pack)
+    assert not rep.ok
+    assert any("drum_tab" in e and "hits" in e for e in rep.errors)
+
+
 # --------------------------------------------------------------------------- #
 # .jsonc support
 # --------------------------------------------------------------------------- #
