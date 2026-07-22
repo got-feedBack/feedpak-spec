@@ -44,9 +44,10 @@ valid under 1.18.0 remains valid, and no conformant package could ever have used
 no corpus exists to break. **New packages that use `idx: 0`** — a pre-1.19 Reader that
 re-validates notation against its own bundled copy of the old schema rejects the file rather
 than degrading gracefully; a Reader that consumes `idx` numerically (or ignores it) is
-unaffected. A Writer that needs the broadest Reader range can keep a source-given number on
-the pickup (`pickup: true` with `idx: 1` remains valid) and adopt `0` once 1.19-aware Readers
-are common. Writers gain the first conformant way to encode an anacrusis.
+unaffected. This is the [§4.2 opt-in carve-out](spec/feedpak-v1.md#42-compatibility-policy)
+boundary (entry 3 there), the first value-domain widening in that list. A Writer that needs
+the broadest Reader range can keep a source-given number on the pickup (`pickup: true` with
+`idx: 1` remains valid) and adopt `0` once 1.19-aware Readers are common. Writers gain the first conformant way to encode an anacrusis.
 
 ## [1.18.0] - 2026-07-20
 

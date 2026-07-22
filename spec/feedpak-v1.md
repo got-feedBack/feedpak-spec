@@ -199,8 +199,10 @@ feedpak_version: "1.19.0"
   binding keys (arrangement-entry [`tones`](#52-arrangements), top-level
   [`drum_tones`](#51-top-level-keys)) — all additive, an older Reader ignores them. 1.19.0 adds no
   key: it widens notation [`measures[].idx`](#76-notation_idjson) to allow `0`, reserved for an
-  opening pickup measure, which previously had no valid number at all. A relaxation, so every
-  earlier package stays valid.)
+  opening pickup measure, which previously had no valid number at all. Every earlier package
+  stays valid; a pack that *uses* `idx: 0` falls under the
+  [§4.2 opt-in carve-out](#42-compatibility-policy) — the same opt-in shape as `.jsonc` — so a
+  pre-1.19.0 Reader MAY reject it.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -221,7 +223,7 @@ Changes to the format are released under semver semantics, applied to `feedpak_v
 
 - **MUST** accept any package whose declared major version is *X*, regardless of its minor or
   patch (it ignores unknown minor additions per [§1.2](#12-roles)) — with the single exception that
-  a package which *uses* an opt-in file-format relaxation the Reader does not implement (see the
+  a package which *uses* an opt-in relaxation the Reader does not implement (see the
   carve-out below) **MAY** be rejected with a clear error. This MUST-accept guarantee otherwise
   holds for all ordinary additive minor/patch changes.
 - **SHOULD** warn, and **MAY** refuse with a clear error, when a package declares a major
@@ -233,10 +235,10 @@ Changes to the format are released under semver semantics, applied to `feedpak_v
 without bumping the **major** version. Additive changes (new optional keys/files) **MUST** be
 released as a **minor** bump and **MUST** be safe for an older Reader to ignore.
 
-**Carve-out: opt-in file-format relaxations.** One narrow class of change is released as a
-**minor** bump even though an older Reader cannot transparently ignore it: an *opt-in relaxation
-of how a file is encoded* — a data file's text, or a stem's audio codec — that a pack uses only
-if it chooses to. Two such relaxations exist
+**Carve-out: opt-in relaxations.** One narrow class of change is released as a
+**minor** bump even though an older Reader cannot transparently ignore it: an *opt-in
+relaxation* — of how a file is encoded (a data file's text, a stem's audio codec) or of a
+schema value domain — that a pack uses only if it chooses to. Three such relaxations exist
 in this document:
 
 1. The [`.jsonc` extension](#8-reading-and-writing) (1.6.0), whose files may contain comments a
@@ -246,21 +248,30 @@ in this document:
    OGG alone to **OGG + WAV** and allows further formats above it (FLAC, Opus, …). Because OGG was
    the only format guaranteed before 1.9.0, a Reader predating 1.9.0 may not decode even a baseline
    WAV stem, and no Reader is ever required to decode the above-baseline formats.
+3. [`idx: 0` for an opening pickup measure](#76-notation_idjson) (1.19.0): before 1.19.0 the
+   notation schema required `idx >= 1`, so a Reader predating 1.19.0 that validates notation
+   against its older schema **MAY** reject a pack using `idx: 0`, with a clear error. A Writer
+   needing the broadest Reader range keeps a source-given number on the pickup (`pickup: true`
+   with `idx >= 1`).
 
-The justification for keeping each minor rather than major is that they are **strictly opt-in and
-per-file**: a pack that does not adopt `.jsonc` — and a `.jsonc` file with no comments — is
-byte-for-byte ordinary JSON every Reader handles; likewise a pack whose stems are all OGG is
-decodable by every Reader regardless of version. Only a pack that *actually uses* a relaxation (a
-comment-bearing `.jsonc` file, or a non-OGG stem with no OGG alternative) requires a Reader
-supporting a later version — a 1.9.0 Reader for a WAV-only pack, or a Reader that opted into the
-above-baseline format otherwise. A Writer wanting maximum cross-version compatibility therefore
-**SHOULD** include an OGG stem. This is therefore an explicit, bounded exception both to the "older Readers keep working by
+The justification for keeping each minor rather than major is that they are **strictly opt-in
+and narrowly scoped** (per-file for the first two, per-value for the third): a pack that does
+not adopt `.jsonc` — and a `.jsonc` file with no comments — is byte-for-byte ordinary JSON
+every Reader handles; a pack whose stems are all OGG is decodable by every Reader regardless
+of version; and a pack that numbers every measure from `1` validates against every schema
+version. Only a pack that *actually uses* a relaxation requires a Reader supporting a later
+version: a JSONC-aware (1.6.0) Reader for a comment-bearing `.jsonc` file, a 1.9.0 Reader (or
+one that opted into an above-baseline format) for a non-OGG stem with no OGG alternative, and
+a 1.19.0 Reader for an `idx: 0` pickup measure. A Writer wanting maximum cross-version
+compatibility therefore **SHOULD** include an OGG stem. This is therefore an explicit, bounded
+exception both to the "older Readers keep working by
 ignoring them" rule and to the **Reader rule** that a major-*X* Reader MUST accept any *X.y.z*
 package (a Reader **MAY** reject a package that uses a relaxation it does not implement). It is
-**not** a general license to add un-ignorable changes under a minor bump; any
-future relaxation of this kind **MUST** be opt-in and per-file in the same way, or else be released
+**not** a general license to add un-ignorable changes under a minor bump; any future relaxation
+of this kind **MUST** be opt-in and equally narrowly scoped, or else be released
 as a **major** bump. A Writer that needs maximum Reader compatibility **SHOULD NOT** rely on the
-relaxation (for `.jsonc`: keep data files as comment-free `.json`).
+relaxation (for `.jsonc`: keep data files as comment-free `.json`; for a pickup: keep a
+source-given `idx >= 1`).
 
 ### 4.3. Side-file schema versions
 
@@ -1279,7 +1290,10 @@ set `pickup: true`. This matches standard engraving practice and the usual Music
 an anacrusis (`<measure number="0" implicit="yes">`), and it keeps every following measure's
 number aligned with the printed score. The requirement is one-directional — `idx: 0` implies
 `pickup: true`, but a pickup measure **MAY** instead carry whatever number its source gives it
-(some publishers number the anacrusis `1`), so `pickup: true` does not require `idx: 0`.
+(some publishers number the anacrusis `1`), so `pickup: true` does not require `idx: 0`. Using
+`idx: 0` is governed by the [§4.2 opt-in carve-out](#42-compatibility-policy): a Reader
+predating 1.19.0 that validates notation against its older schema MAY reject a pack that uses
+it.
 
 For a pickup measure, `t` is the time of its **first sounded beat** — the measure precedes
 measure 1's downbeat, so its `t` is not a downbeat time (for every other measure it is). In
@@ -1565,7 +1579,7 @@ valid JSON. A Writer that preserves edits to a `.jsonc` file **SHOULD** leave th
 intact. For new hand-edited packs, Writers **MAY** write `.jsonc` data files and **MAY** include
 comments in them.
 
-Note on compatibility. `.jsonc` is governed by the **opt-in file-format relaxation carve-out** in
+Note on compatibility. `.jsonc` is governed by the **opt-in relaxation carve-out** in
 [§4.2](#42-compatibility-policy), not by the ordinary "older Readers keep working by ignoring them"
 rule. Two facts must be kept separate:
 
