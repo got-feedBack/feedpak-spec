@@ -139,6 +139,91 @@ def test_empty_arrangement_tempos_fails(tmp_path):
     assert any("tempos" in e for e in rep.errors)
 
 
+def _notation(measures: list[dict]) -> str:
+    return json.dumps({
+        "version": 1,
+        "instrument": "piano",
+        "staves": [{"id": "rh", "clef": "G2"}],
+        "measures": measures,
+    })
+
+
+def _beats(t: float) -> dict:
+    return {"rh": {"voices": [{"v": 1, "beats": [
+        {"t": t, "dur": 4, "notes": [{"midi": 67}]}]}]}}
+
+
+def test_pickup_measure_idx_zero_passes(tmp_path):
+    # spec §7.6: idx 0 is reserved for an opening pickup (anacrusis) measure.
+    # Before 1.19.0 the schema required idx >= 1, so a pickup had no valid
+    # number at all — the conventional 0 was rejected outright.
+    m = _base_manifest()
+    m["arrangements"].append(
+        {"id": "keys", "type": "piano", "notation": "notation_keys.json"}
+    )
+    notation = _notation([
+        {"idx": 0, "t": 0.0, "ts": [4, 4], "pickup": True, "staves": _beats(0.0)},
+        {"idx": 1, "t": 0.5, "ts": [4, 4], "staves": _beats(0.5)},
+    ])
+    pack = _make_pack(tmp_path / "ok.feedpak", m, extra={"notation_keys.json": notation})
+    assert validate.resolve_and_validate(pack).ok
+
+
+@pytest.mark.parametrize(
+    "measure",
+    [
+        {"idx": 0, "t": 0.0, "ts": [4, 4]},                     # flag absent
+        {"idx": 0, "t": 0.0, "ts": [4, 4], "pickup": False},    # flag explicitly false
+    ],
+)
+def test_pickup_measure_idx_zero_without_pickup_fails(tmp_path, measure):
+    # The reservation is enforced one-directionally: idx 0 implies pickup:true,
+    # so 0 cannot be used as a general off-by-one measure number — neither by
+    # omitting the flag nor by setting it false.
+    m = _base_manifest()
+    m["arrangements"].append(
+        {"id": "keys", "type": "piano", "notation": "notation_keys.json"}
+    )
+    notation = _notation([{**measure, "staves": _beats(0.0)}])
+    pack = _make_pack(tmp_path / "bad.feedpak", m, extra={"notation_keys.json": notation})
+    rep = validate.resolve_and_validate(pack)
+    assert not rep.ok
+    # pin the location and the mechanism, not just a substring anywhere:
+    # jsonschema reports either the missing required property or the const.
+    assert any(
+        "measures/0" in e and ("required" in e or "True" in e) for e in rep.errors
+    ), rep.errors
+
+
+def test_pickup_measure_may_keep_its_source_numbering(tmp_path):
+    # ...but the converse does NOT hold: a pickup MAY carry whatever number its
+    # source gives it (some publishers number the anacrusis 1), so pickup:true
+    # with idx 1 stays valid.
+    m = _base_manifest()
+    m["arrangements"].append(
+        {"id": "keys", "type": "piano", "notation": "notation_keys.json"}
+    )
+    notation = _notation([
+        {"idx": 1, "t": 0.0, "ts": [4, 4], "pickup": True, "staves": _beats(0.0)},
+        {"idx": 2, "t": 0.5, "ts": [4, 4], "staves": _beats(0.5)},
+    ])
+    pack = _make_pack(tmp_path / "ok.feedpak", m, extra={"notation_keys.json": notation})
+    assert validate.resolve_and_validate(pack).ok
+
+
+def test_negative_measure_idx_still_fails(tmp_path):
+    # The relaxation is to 0, not to arbitrary integers.
+    m = _base_manifest()
+    m["arrangements"].append(
+        {"id": "keys", "type": "piano", "notation": "notation_keys.json"}
+    )
+    notation = _notation([{"idx": -1, "t": 0.0, "ts": [4, 4], "staves": _beats(0.0)}])
+    pack = _make_pack(tmp_path / "bad.feedpak", m, extra={"notation_keys.json": notation})
+    rep = validate.resolve_and_validate(pack)
+    assert not rep.ok
+    assert any("measures/0/idx" in e and "minimum" in e for e in rep.errors), rep.errors
+
+
 def test_per_arrangement_drum_tab_is_validated(tmp_path):
     # A `type: drums` arrangement's own `drum_tab` pointer must be resolved and
     # schema-validated, not ignored. Here the pointed-at file is missing the

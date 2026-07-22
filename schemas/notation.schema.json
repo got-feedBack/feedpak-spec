@@ -31,8 +31,19 @@
         "type": "object",
         "required": ["idx", "t"],
         "additionalProperties": true,
+        "allOf": [
+          {
+            "$comment": "spec 7.6: idx 0 is reserved for the opening pickup (anacrusis) measure. One-directional on purpose — 0 implies pickup, but a pickup MAY carry the number its source gives it.",
+            "if": { "required": ["idx"], "properties": { "idx": { "const": 0 } } },
+            "then": { "required": ["pickup"], "properties": { "pickup": { "const": true } } }
+          }
+        ],
         "properties": {
-          "idx": { "type": "integer", "minimum": 1 },
+          "idx": {
+            "type": "integer",
+            "minimum": 0,
+            "$comment": "Measure number. Normal measures are 1-based; 0 is reserved for an opening pickup measure, which must set pickup:true (spec 7.6)."
+          },
           "t": { "type": "number" },
           "ts": {
             "type": "array",

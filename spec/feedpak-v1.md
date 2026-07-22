@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.18.0
+- **Specification version:** 1.19.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-07-20
+- **Date:** 2026-07-22
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.18.0"
+feedpak_version: "1.19.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.18.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.19.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -197,7 +197,10 @@ feedpak_version: "1.18.0"
   realization engine [`soundfont`](#79-rigsjson), the reserved block role [`source`](#79-rigsjson),
   the normative-when-present [`intent.gm`](#79-rigsjson) General-MIDI floor, and the manifest
   binding keys (arrangement-entry [`tones`](#52-arrangements), top-level
-  [`drum_tones`](#51-top-level-keys)) — all additive, an older Reader ignores them.)
+  [`drum_tones`](#51-top-level-keys)) — all additive, an older Reader ignores them. 1.19.0 adds no
+  key: it widens notation [`measures[].idx`](#76-notation_idjson) to allow `0`, reserved for an
+  opening pickup measure, which previously had no valid number at all. A relaxation, so every
+  earlier package stays valid.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -1264,11 +1267,32 @@ format.
 **Clef vocabulary:** `G2` (treble), `F4` (bass), `C3` (alto), `C4` (tenor), `neutral`
 (unpitched/percussion).
 
-**Measure fields:** `idx` (1-based number), `t` (downbeat time, s), `ts` (`[num, den]`, omit if
+**Measure fields:** `idx` (measure number — see below), `t` (downbeat time, s), `ts` (`[num, den]`, omit if
 unchanged), `beat_groups` (int[] for compound/irregular meters; the sum MUST equal the
 numerator; omit for simple meters), `ks` (key signature, −7..+7 semitones from C; negative =
 flats; omit if unchanged), `tempo` (BPM, omit if unchanged), `pickup` (bool anacrusis flag, omit
 when false), `staves` (keyed by staff `id`; each has OPTIONAL `clef` and `voices`).
+
+**Measure numbering (`idx`).** Normal measures are numbered from `1`. The value `0` is
+**RESERVED** for an opening **pickup** measure (anacrusis): a measure with `idx: 0` **MUST** also
+set `pickup: true`. This matches standard engraving practice and the usual MusicXML emission for
+an anacrusis (`<measure number="0" implicit="yes">`), and it keeps every following measure's
+number aligned with the printed score. The requirement is one-directional — `idx: 0` implies
+`pickup: true`, but a pickup measure **MAY** instead carry whatever number its source gives it
+(some publishers number the anacrusis `1`), so `pickup: true` does not require `idx: 0`.
+
+For a pickup measure, `t` is the time of its **first sounded beat** — the measure precedes
+measure 1's downbeat, so its `t` is not a downbeat time (for every other measure it is). In
+[`song_timeline.json`](#74-song_timelinejson), the beats inside a pickup are upbeats, not
+downbeats: mark them `measure: -1`, and give `measure: 1` to the first full measure's downbeat —
+the timeline numbers downbeats only, so it needs no `0`.
+
+Numbering beyond this is out of scope for v1: `idx` is a plain integer, so mid-score implicit or
+partial measures — a measure split across a repeat, or the "7a"/"7b" style some publishers use —
+cannot be expressed, and `0` **MUST NOT** be reused for them (like the other Writer MUSTs in this
+section, this is a rule on Writers; the schema alone cannot check where in the score a measure
+sits). A Writer that meets one numbers the measures sequentially and accepts the divergence from
+the printed score.
 
 **Beat fields** (inside `staves → voices → beats`): `t` (required), `dur` (required denominator:
 `1`=whole … `32`=thirty-second), `dot`, `rest`, `tu` (`[num, den]` tuplet), `beat_pos`

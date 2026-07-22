@@ -2,7 +2,7 @@
 # song timeline, and drum tabs (incl. multiple drum-part arrangements).
 # See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.18.0"
+feedpak_version: "1.19.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"
@@ -23,7 +23,7 @@ authors:
     url: https://janesmith.example
   - name: Bob Lee
     role: editor
-duration: 4.0
+duration: 4.5
 arrangements:
   - id: lead
     name: Lead

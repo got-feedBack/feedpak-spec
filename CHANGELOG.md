@@ -8,6 +8,44 @@ and the specification is versioned per [Semantic Versioning](https://semver.org/
 [spec §4](spec/feedpak-v1.md#4-versioning) for how format, side-file, and document versions
 relate.
 
+## [1.19.0] - 2026-07-22
+
+Additive (MINOR) release: a **pickup measure can finally be numbered**. Defect #64.
+
+§7.6 defined a `pickup` (anacrusis) measure flag, but `notation.schema.json` required
+`idx >= 1` — so a pickup measure had no valid number. The conventional `0` was rejected by the
+schema, and `1` collided with the first full measure, shifting every later measure off by one
+against the printed score. The flag was unusable as specified; it shipped with no example and no
+test, which is how the contradiction survived every release since 1.0.0.
+
+### Fixed
+- **`measures[].idx` now allows `0`** ([§7.6](spec/feedpak-v1.md#76-notation_idjson)) —
+  `notation.schema.json` relaxes `minimum` from `1` to `0`. The value `0` is **RESERVED** for an
+  opening pickup measure and a measure with `idx: 0` **MUST** also set `pickup: true`, enforced
+  by a schema conditional. The rule is one-directional: `idx: 0` implies `pickup: true`, but a
+  pickup measure MAY instead carry the number its source gives it, so `pickup: true` does not
+  require `idx: 0`. This matches standard engraving practice and the usual MusicXML emission for
+  an anacrusis (`<measure number="0" implicit="yes">`).
+- §7.6 now defines the surrounding semantics the flag needed: a pickup measure's `t` is its
+  first sounded beat (it has no downbeat), and in `song_timeline.json` its beats are upbeats —
+  `measure: -1` — with `measure: 1` on the first full measure's downbeat, so the timeline needs
+  no `0`. Also stated: mid-score implicit or partial measures (a measure split across a repeat,
+  "7a"/"7b" publisher numbering) remain out of scope for v1's integer `idx`, and `0` MUST NOT
+  be reused for them — a Writer rule, recorded so the reserved value doesn't get overloaded
+  later.
+- `examples/extended.feedpak` now opens with a keys pickup measure, exercised across the whole
+  pack: every sibling time stream shifts with the grid (apply-until-next maps keep their `0.0`
+  anchor so the pickup region stays covered), and the timeline shows the upbeat-then-downbeat
+  shape. The reference test suite covers the accepted shapes and the rejected ones.
+
+### Compatibility
+Purely a relaxation of an existing constraint: every package valid under 1.18.0 remains valid,
+and no reader behaviour changes — a reader already had to handle `pickup`. Strictly speaking a
+reader built against the old schema could have assumed `idx >= 1`, so this is not *provably*
+zero-impact; in practice the risk is nil, because no conformant package could ever have used
+`idx: 0`, so no corpus of such packs exists to break. Writers gain the first conformant way to
+encode an anacrusis.
+
 ## [1.18.0] - 2026-07-20
 
 Additive (MINOR) release: **MIDI-voiced sound sources** in the rig model — a chart can now
