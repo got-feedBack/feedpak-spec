@@ -39,12 +39,14 @@ test, which is how the contradiction survived every release since 1.0.0.
   shape. The reference test suite covers the accepted shapes and the rejected ones.
 
 ### Compatibility
-Purely a relaxation of an existing constraint: every package valid under 1.18.0 remains valid,
-and no reader behaviour changes — a reader already had to handle `pickup`. Strictly speaking a
-reader built against the old schema could have assumed `idx >= 1`, so this is not *provably*
-zero-impact; in practice the risk is nil, because no conformant package could ever have used
-`idx: 0`, so no corpus of such packs exists to break. Writers gain the first conformant way to
-encode an anacrusis.
+Two directions, stated separately. **Existing packages** — purely a relaxation: every package
+valid under 1.18.0 remains valid, and no conformant package could ever have used `idx: 0`, so
+no corpus exists to break. **New packages that use `idx: 0`** — a pre-1.19 Reader that
+re-validates notation against its own bundled copy of the old schema rejects the file rather
+than degrading gracefully; a Reader that consumes `idx` numerically (or ignores it) is
+unaffected. A Writer that needs the broadest Reader range can keep a source-given number on
+the pickup (`pickup: true` with `idx: 1` remains valid) and adopt `0` once 1.19-aware Readers
+are common. Writers gain the first conformant way to encode an anacrusis.
 
 ## [1.18.0] - 2026-07-20
 
