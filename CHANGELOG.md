@@ -10,13 +10,15 @@ relate.
 
 ## [1.19.0] - 2026-07-22
 
-Additive (MINOR) release: a **pickup measure can finally be numbered**. Defect #64.
+Additive (MINOR) release: a **pickup measure can finally carry its conventional number**.
+Defect #64.
 
 §7.6 defined a `pickup` (anacrusis) measure flag, but `notation.schema.json` required
-`idx >= 1` — so a pickup measure had no valid number. The conventional `0` was rejected by the
-schema, and `1` collided with the first full measure, shifting every later measure off by one
-against the printed score. The flag was unusable as specified; it shipped with no example and no
-test, which is how the contradiction survived every release since 1.0.0.
+`idx >= 1` — so a pickup measure had no valid *conventional* number. The standard `0` was
+rejected by the schema, and the only schema-valid option, `1`, collided with the first full
+measure and shifted every later measure off by one against the printed score. Using the flag
+thus forced a renumbering; the pairing shipped with no example and no test, which is how the
+contradiction survived every release since 1.0.0.
 
 ### Fixed
 - **`measures[].idx` now allows `0`** ([§7.6](spec/feedpak-v1.md#76-notation_idjson)) —
@@ -47,7 +49,8 @@ than degrading gracefully; a Reader that consumes `idx` numerically (or ignores 
 unaffected. This is the [§4.2 opt-in carve-out](spec/feedpak-v1.md#42-compatibility-policy)
 boundary (entry 3 there), the first value-domain widening in that list. A Writer that needs
 the broadest Reader range can keep a source-given number on the pickup (`pickup: true` with
-`idx: 1` remains valid) and adopt `0` once 1.19-aware Readers are common. Writers gain the first conformant way to encode an anacrusis.
+`idx: 1` remains valid) and adopt `0` once 1.19-aware Readers are common. Writers gain the
+first way to encode an anacrusis without renumbering it against the printed score.
 
 ## [1.18.0] - 2026-07-20
 
