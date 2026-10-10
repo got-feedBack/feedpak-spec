@@ -21,20 +21,59 @@
         }
       }
     },
-    "hits": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["t", "p"],
-        "additionalProperties": true,
-        "properties": {
-          "t": { "type": "number" },
-          "p": { "type": "string" },
-          "v": { "type": "integer", "minimum": 1, "maximum": 127 },
-          "g": { "type": "boolean" },
-          "f": { "type": "boolean" },
-          "k": { "type": "number" }
-        }
+    "hits": { "type": "array", "items": { "$ref": "#/$defs/hit" } },
+    "star_power": { "$ref": "#/$defs/ranges", "$comment": "Star-power phrases (1.20.0)." },
+    "fills": { "$ref": "#/$defs/ranges", "$comment": "Fill / star-power activation phrases (1.20.0)." },
+    "solos": { "$ref": "#/$defs/ranges", "$comment": "Drum-solo sections (1.20.0)." },
+    "levels": {
+      "type": "object",
+      "$comment": "Easier difficulties (1.20.0). Closed id list easy/medium/hard; a Reader ignores any other id.",
+      "additionalProperties": true,
+      "properties": {
+        "easy": { "$ref": "#/$defs/level" },
+        "medium": { "$ref": "#/$defs/level" },
+        "hard": { "$ref": "#/$defs/level" }
+      }
+    }
+  },
+  "$defs": {
+    "hit": {
+      "type": "object",
+      "required": ["t", "p"],
+      "additionalProperties": true,
+      "properties": {
+        "t": { "type": "number" },
+        "p": { "type": "string" },
+        "v": { "type": "integer", "minimum": 1, "maximum": 127 },
+        "g": { "type": "boolean" },
+        "f": { "type": "boolean" },
+        "k": { "type": "number" },
+        "a": { "type": "boolean", "$comment": "Accent (1.20.0)." },
+        "x2": { "type": "boolean", "$comment": "Double-kick (Expert+) note (1.20.0); meaningful on kick in the top-level hits[] only." }
+      },
+      "not": {
+        "$comment": "A hit is not both accented and ghosted (1.20.0).",
+        "required": ["a", "g"],
+        "properties": { "a": { "const": true }, "g": { "const": true } }
+      }
+    },
+    "range": {
+      "type": "object",
+      "required": ["start_time", "end_time"],
+      "additionalProperties": true,
+      "properties": {
+        "start_time": { "type": "number" },
+        "end_time": { "type": "number" }
+      }
+    },
+    "ranges": { "type": "array", "items": { "$ref": "#/$defs/range" } },
+    "level": {
+      "type": "object",
+      "required": ["hits"],
+      "additionalProperties": true,
+      "properties": {
+        "hits": { "type": "array", "items": { "$ref": "#/$defs/hit" } },
+        "generated": { "type": "boolean" }
       }
     }
   }

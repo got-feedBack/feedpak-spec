@@ -241,6 +241,61 @@ def test_per_arrangement_drum_tab_is_validated(tmp_path):
     assert any("drum_tab" in e and "hits" in e for e in rep.errors)
 
 
+def _drum_pack(tmp_path, drum_tab: dict):
+    m = _base_manifest()
+    m["drum_tab"] = "drum_tab.json"
+    return _make_pack(tmp_path / "drums.feedpak", m, extra={"drum_tab.json": json.dumps(drum_tab)})
+
+
+_GAMEPLAY_TAB = {
+    "version": 1,
+    "hits": [
+        {"t": 0.5, "p": "kick"},
+        {"t": 0.5, "p": "crash_l", "a": True},
+        {"t": 0.625, "p": "kick", "x2": True},
+        {"t": 0.75, "p": "snare", "g": True},
+    ],
+    "star_power": [{"start_time": 0.5, "end_time": 2.5}],
+    "fills": [{"start_time": 6.0, "end_time": 8.0}],
+    "solos": [{"start_time": 32.0, "end_time": 48.0}],
+    "levels": {
+        "hard": {"hits": [{"t": 0.5, "p": "kick"}]},
+        "easy": {"hits": [{"t": 0.5, "p": "crash_l"}], "generated": True},
+    },
+}
+
+
+def test_drum_gameplay_metadata_passes(tmp_path):
+    # 1.20.0: accent / double-kick flags, star power, fills, solos, levels.
+    rep = validate.resolve_and_validate(_drum_pack(tmp_path, _GAMEPLAY_TAB))
+    assert rep.ok, rep.errors
+
+
+def test_drum_unknown_level_id_is_ignored(tmp_path):
+    # The difficulty ids are a closed list, but an unknown one is forward-compatible.
+    tab = dict(_GAMEPLAY_TAB, levels={"expert_plus_plus": {"anything": 1}})
+    rep = validate.resolve_and_validate(_drum_pack(tmp_path, tab))
+    assert rep.ok, rep.errors
+
+
+@pytest.mark.parametrize(
+    "patch, needle",
+    [
+        ({"star_power": [{"start_time": 0.5}]}, "end_time"),            # half a range
+        ({"fills": [[6.0, 8.0]]}, "fills"),                              # pair, not object
+        ({"solos": {"start_time": 1.0, "end_time": 2.0}}, "solos"),      # not an array
+        ({"levels": {"hard": {"generated": True}}}, "hits"),            # level without hits
+        ({"levels": {"easy": {"hits": [{"t": 0.5}]}}}, "'p'"),           # level hit w/o piece
+        ({"hits": [{"t": 0.5, "p": "snare", "a": True, "g": True}]}, "hits/0"),  # accent + ghost
+        ({"hits": [{"t": 0.5, "p": "kick", "x2": 1}]}, "x2"),            # not a boolean
+    ],
+)
+def test_drum_gameplay_metadata_rejects_malformed(tmp_path, patch, needle):
+    rep = validate.resolve_and_validate(_drum_pack(tmp_path, dict(_GAMEPLAY_TAB, **patch)))
+    assert not rep.ok
+    assert any(needle in e for e in rep.errors), rep.errors
+
+
 # --------------------------------------------------------------------------- #
 # .jsonc support
 # --------------------------------------------------------------------------- #

@@ -7,10 +7,10 @@ The JSON Schemas, examples, and reference code that accompany it are MIT-license
 
 # feedpak Format Specification
 
-- **Specification version:** 1.19.0
+- **Specification version:** 1.20.0
 - **Format major version:** 1
 - **Status:** Draft
-- **Date:** 2026-07-22
+- **Date:** 2026-10-09
 - **Editors:** The feedpak authors
 - **License:** [CC0 1.0 Universal](../LICENSE) (this document)
 - **Machine-readable schemas:** [`schemas/`](../schemas/) (MIT)
@@ -147,11 +147,11 @@ The manifest **SHOULD** carry a top-level `feedpak_version` key whose value is a
 which version of *this format* the package conforms to.
 
 ```yaml
-feedpak_version: "1.19.0"
+feedpak_version: "1.20.0"
 ```
 
 - A Writer producing a feedpak that conforms to this document **SHOULD** set
-  `feedpak_version: "1.19.0"`. (The optional fields added since 1.0.0 —
+  `feedpak_version: "1.20.0"`. (The optional fields added since 1.0.0 —
   [`authors`](#54-authors) in 1.1.0; the song-level [`tempos`](#74-song_timelinejson) /
   [`time_signatures`](#74-song_timelinejson) plus the per-arrangement
   [`tempos`](#610-per-arrangement-tempo-optional) override in 1.2.0; the per-note bend shape
@@ -202,7 +202,11 @@ feedpak_version: "1.19.0"
   opening pickup measure, which previously had no valid number at all. Every earlier package
   stays valid; a pack that *uses* `idx: 0` falls under the
   [§4.2 opt-in carve-out](#42-compatibility-policy) — the same opt-in shape as `.jsonc` — so a
-  pre-1.19.0 Reader MAY reject it.)
+  pre-1.19.0 Reader MAY reject it. 1.20.0 adds no manifest key: it adds optional
+  [drum gameplay metadata](#drum-gameplay-metadata) to the `drum_tab` file — the per-hit
+  [`a`](#75-drum_tabjson) (accent) and [`x2`](#75-drum_tabjson) (double-kick) flags and the
+  top-level `star_power`, `fills`, `solos`, and `levels` — all additive, an older Reader
+  ignores them and plays the full `hits[]` chart as before.)
 - If `feedpak_version` is **absent**, a Reader **MUST** treat the package as `"1.0.0"`. (This
   makes every package authored before the field existed a valid 1.0.0 package.)
 - The value **MUST** be a valid semver string when present. A Reader **MUST** reject a value
@@ -1159,6 +1163,13 @@ same for both). A pack MAY carry **several** drum parts as `type: drums` arrange
 | `g` | boolean | Ghost note. |
 | `f` | boolean | Flam. |
 | `k` | number | Cymbal-choke tail duration (s). |
+| `a` | boolean | Accent — an authored *hit harder* mark (1.20.0). A hit **MUST NOT** set both `a` and `g`. |
+| `x2` | boolean | Double-kick note (1.20.0) — the second-pedal kicks a rhythm game hides below its top ("Expert+") difficulty. Meaningful on `kick` only. See [Drum gameplay metadata](#drum-gameplay-metadata). |
+
+`a` exists because velocity alone cannot say *authored accent*: a chart imported from a performance
+MIDI carries natural velocities, so "`v` is high" is not a mark a scorer can grade against. A Writer
+that knows a hit is accented sets `a` (and MAY also raise `v`); one that only has velocities leaves
+`a` off.
 
 `kit[]` is the legend (stable metadata); `hits[]` is the hot path (short field names). Open and
 closed hi-hat are **distinct piece-ids**, not articulation flags — a scorer can only reject a
@@ -1187,6 +1198,63 @@ round-trip (a Reader renders them with a sensible default rather than erroring).
 | `ride` | cymbal | 51, 59 |
 | `ride_bell` | cymbal | 53 |
 | `bell` | cymbal | 80 |
+
+#### Drum gameplay metadata
+
+Rhythm-game drum charts (Rock Band, Clone Hero, YARG and the like) carry more than hits: authored
+easier difficulties, star-power phrases, fills, and solo sections. A `drum_tab` file MAY carry them
+in the OPTIONAL top-level keys below (1.20.0). They describe the **chart**, not a scoring
+algorithm — how many points a phrase is worth, or what a fill does when played, is the consumer's
+choice. Every key is optional and independent; an older Reader ignores them all and plays `hits[]`.
+
+```json
+{
+  "version": 1,
+  "name": "Drums",
+  "hits": [
+    {"t": 0.500, "p": "kick"},
+    {"t": 0.500, "p": "crash_l", "a": true},
+    {"t": 0.625, "p": "kick", "x2": true},
+    {"t": 0.750, "p": "snare", "g": true}
+  ],
+  "star_power": [{"start_time": 0.500, "end_time": 2.500}],
+  "fills":      [{"start_time": 6.000, "end_time": 8.000}],
+  "solos":      [{"start_time": 32.000, "end_time": 48.000}],
+  "levels": {
+    "hard": {"hits": [{"t": 0.500, "p": "kick"}, {"t": 0.500, "p": "crash_l"}]},
+    "easy": {"hits": [{"t": 0.500, "p": "crash_l"}], "generated": true}
+  }
+}
+```
+
+| Key | Type | Notes |
+|---|---|---|
+| `star_power` | array of ranges | Star-power phrases: hitting every note of a phrase earns the player star power (overdrive) in games that have it. |
+| `fills` | array of ranges | Fill (star-power activation) phrases: the stretch where a player with banked star power activates it, usually by a freestyle fill ending on a final strike at `end_time`. |
+| `solos` | array of ranges | Drum-solo sections, for solo scoring or display. |
+| `levels` | object | Easier difficulties, keyed by difficulty id (below). |
+
+A **range** is an object `{"start_time": number, "end_time": number}` in seconds, the same pair the
+arrangement [`phrases`](#6-arrangement-json) (§6.7) use, with `end_time` **≥** `start_time`. A Writer
+**SHOULD** emit each array sorted by `start_time` and non-overlapping.
+
+**Difficulty levels.** `hits[]` is always the drum part's **hardest** chart. `levels` adds easier
+ones, each `{"hits": [...], "generated": boolean}` where `hits` has exactly the shape of the
+top-level `hits[]` and `generated: true` marks a level reduced from `hits[]` by software rather than
+authored by a charter (absent ⇒ authored), so a player can be told which it is. The difficulty ids
+are a closed list for v1 — `easy`, `medium`, `hard`, from easiest — and a Reader **MUST** ignore an
+id it does not recognise. A Writer **SHOULD NOT** add a level that is merely a copy of `hits[]`.
+
+**Double kick (`x2`) and the top difficulty.** Rhythm games split the hardest chart in two:
+"Expert" without the second-pedal notes, "Expert+" with them. In `drum_tab`, `hits[]` is the full
+chart — **including** the `x2` kicks — so a Reader that knows nothing about `x2` plays every note
+the drummer plays, which is the musically complete part. A Reader offering the split derives the
+lower one by dropping `x2` hits. `x2` is meaningful only on `kick` and only in the top-level
+`hits[]`; a Reader **MUST** ignore it elsewhere, and a Writer **SHOULD NOT** emit it in a `levels`
+entry.
+
+Each drum part carries its own metadata: with [several drum parts](#multiple-drum-parts), the keys in
+one part's `drum_tab` file describe that part only.
 
 #### Multiple drum parts
 

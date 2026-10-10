@@ -1,8 +1,9 @@
 # Extended feedpak exercising optional side-files: lyrics, vocal pitch,
-# song timeline, and drum tabs (incl. multiple drum-part arrangements).
+# song timeline, and drum tabs (incl. multiple drum-part arrangements and
+# drum gameplay metadata — levels, star power, fills, solos — in drum_tab.json).
 # See spec/feedpak-v1.md §5 and §7.
 # SPDX-License-Identifier: MIT
-feedpak_version: "1.19.0"
+feedpak_version: "1.20.0"
 title: "Extended Demo"
 artist: "Example Artist"
 album: "Spec Examples"

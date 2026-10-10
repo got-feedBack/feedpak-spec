@@ -8,6 +8,38 @@ and the specification is versioned per [Semantic Versioning](https://semver.org/
 [spec §4](spec/feedpak-v1.md#4-versioning) for how format, side-file, and document versions
 relate.
 
+## [1.20.0] - 2026-10-09
+
+Additive (MINOR) release: **drum gameplay metadata** — a `drum_tab` file can now carry what a
+rhythm-game drum chart (Rock Band, Clone Hero, YARG) has beyond its hits: easier difficulties,
+star-power phrases, fills, solo sections, accents, and the double-kick notes that separate
+"Expert" from "Expert+". Until now a drum chart imported from one of those games lost all of it,
+or a Writer had to park it in extension keys no other Reader understood.
+
+### Added
+- **Per-hit `a` (accent) and `x2` (double-kick) flags** on `hits[]`
+  ([§7.5](spec/feedpak-v1.md#75-drum_tabjson)). `a` is an *authored* accent — velocity can't
+  carry that, since a performance MIDI's natural velocities would read as accents. A hit **MUST
+  NOT** set both `a` and `g` (schema-enforced). `x2` marks a second-pedal kick: `hits[]` stays the
+  musically complete chart, *including* those kicks, and a Reader offering the Expert / Expert+
+  split derives Expert by dropping them — so a Reader that knows nothing about `x2` plays exactly
+  what the drummer plays.
+- **Top-level `star_power`, `fills`, `solos`** — arrays of `{start_time, end_time}` ranges (the
+  pair arrangement `phrases` already use) — and **`levels`**, the easier difficulties keyed by a
+  closed id list `easy` / `medium` / `hard`, each `{hits, generated}` with `hits` in exactly the
+  top-level shape and `generated: true` marking a level reduced by software rather than charted
+  ([§7.5 "Drum gameplay metadata"](spec/feedpak-v1.md#drum-gameplay-metadata)). `hits[]` is
+  always the hardest chart. The keys describe the chart only; scoring stays the consumer's.
+  `schemas/drum-tab.schema.json` gains the fields (hits factored into a shared `$defs/hit` so
+  level hits validate identically); `examples/extended.feedpak/drum_tab.json` exercises every one;
+  the reference test suite covers the accepted shapes and the rejected ones.
+
+### Compatibility
+Purely additive: no manifest key, no new file, and every 1.19.0 package stays valid. An older
+Reader ignores the new keys and flags and plays `hits[]` — which, by design, is the full chart. A
+Reader that re-validates `drum_tab` against its bundled pre-1.20 schema also passes, since that
+schema already allowed additional properties.
+
 ## [1.19.0] - 2026-07-22
 
 Additive (MINOR) release: a **pickup measure can finally carry its conventional number**.

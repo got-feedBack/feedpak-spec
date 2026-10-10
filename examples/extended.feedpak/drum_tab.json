@@ -9,11 +9,35 @@
   ],
   "hits": [
     {"t": 0.5, "p": "kick", "v": 110},
-    {"t": 0.5, "p": "crash_r", "v": 120, "k": 0.08},
+    {"t": 0.5, "p": "crash_r", "v": 120, "k": 0.08, "a": true},
     {"t": 1.0, "p": "hh_closed", "v": 70},
     {"t": 1.5, "p": "snare", "v": 92},
     {"t": 2.0, "p": "hh_closed", "v": 70, "g": true},
     {"t": 2.5, "p": "kick", "v": 110},
+    {"t": 2.75, "p": "kick", "v": 100, "x2": true},
     {"t": 3.5, "p": "snare", "v": 100, "f": true}
-  ]
+  ],
+  "star_power": [{"start_time": 0.5, "end_time": 1.5}],
+  "fills": [{"start_time": 2.5, "end_time": 3.5}],
+  "solos": [{"start_time": 2.0, "end_time": 4.0}],
+  "levels": {
+    "hard": {
+      "hits": [
+        {"t": 0.5, "p": "kick", "v": 110},
+        {"t": 0.5, "p": "crash_r", "v": 120, "a": true},
+        {"t": 1.0, "p": "hh_closed", "v": 70},
+        {"t": 1.5, "p": "snare", "v": 92},
+        {"t": 2.5, "p": "kick", "v": 110},
+        {"t": 3.5, "p": "snare", "v": 100}
+      ]
+    },
+    "easy": {
+      "hits": [
+        {"t": 0.5, "p": "crash_r", "v": 120},
+        {"t": 1.5, "p": "snare", "v": 92},
+        {"t": 3.5, "p": "snare", "v": 100}
+      ],
+      "generated": true
+    }
+  }
 }
